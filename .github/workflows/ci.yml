@@ -431,3 +431,42 @@ jobs:
           chezmoi verify "${common[@]}"
 
           echo "Idempotent: second apply produced no changes."
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 5. trufflehog
+  #    Complements gitleaks. Where gitleaks is a broad regex/entropy net,
+  #    TruffleHog VERIFIES findings — it calls the provider to confirm a secret
+  #    is a live, exploitable credential. --results=verified keeps this
+  #    high-signal / low-noise; --fail hard-fails ONLY on a confirmed-live
+  #    secret (an unverified pattern hit is gitleaks' job, not this gate).
+  #    Pinned binary; full history (scanning every ref is the `git` default).
+  # ───────────────────────────────────────────────────────────────────────────
+  trufflehog:
+    name: trufflehog (verified)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          # Full history so every commit/ref is scanned, not just HEAD.
+          fetch-depth: 0
+
+      - name: Install TruffleHog
+        run: |
+          set -euo pipefail
+          version="3.95.5"
+          url="https://github.com/trufflesecurity/trufflehog/releases/download/v${version}/trufflehog_${version}_linux_amd64.tar.gz"
+          curl -fsSL "$url" -o /tmp/trufflehog.tar.gz
+          tar -xzf /tmp/trufflehog.tar.gz -C /tmp trufflehog
+          sudo install -m 0755 /tmp/trufflehog /usr/local/bin/trufflehog
+          trufflehog --version
+
+      - name: Scan git history for VERIFIED secrets (hard fail on live creds)
+        run: |
+          set -euo pipefail
+          # Only secrets TruffleHog can confirm are ACTIVE fail this gate.
+          # --no-update keeps the pinned binary from self-upgrading at runtime.
+          trufflehog git file://. \
+            --results=verified \
+            --fail \
+            --no-update

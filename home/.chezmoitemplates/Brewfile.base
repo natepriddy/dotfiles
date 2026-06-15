@@ -26,7 +26,10 @@ brew "yq"
 
 # ── shell comfort ────────────────────────────────────────────────
 brew "starship"
-brew "bash-completion"
+# bash-completion is macOS-only — see run_onchange_after_20-homebrew.sh.tmpl.
+# On linuxbrew it conflicts with util-linux (both install mount/rfkill/rtcwake
+# completions). bash-completion@2 would avoid the conflict but is unmaintained
+# on Linux and not needed there (distro bash-completion handles it).
 
 # ── system ───────────────────────────────────────────────────────
 brew "htop"
