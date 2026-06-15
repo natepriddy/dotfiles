@@ -369,7 +369,7 @@ main() {
 
   if [[ "${FAILED}" -eq 0 ]]; then
     printf '\n%sOVERALL: PASS%s — safe checks clear. (WARN items are skips, not failures.)\n' "${C_GRN}" "${C_RST}"
-    printf 'Next HUMAN-GATED steps live in docs/cutover-runbook.md — do NOT automate them.\n'
+    printf 'Next HUMAN-GATED cutover steps: see the private planning repo or TASK-021 in the Obsidian vault.\n'
     exit 0
   else
     printf '\n%sOVERALL: FAIL%s — resolve the FAIL items above before cutover.\n' "${C_RED}" "${C_RST}"
