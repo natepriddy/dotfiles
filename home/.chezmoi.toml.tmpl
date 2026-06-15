@@ -13,6 +13,10 @@
 {{- $brewFull := ne $trust "client-restricted" -}}
 {{- $work := or (eq $trust "company") (eq $trust "client-restricted") -}}
 
+{{- /* git identity — stored in machine-local config, never committed */ -}}
+{{- $gitName  := promptStringOnce . "git_name"  "Git user name"  "" -}}
+{{- $gitEmail := promptStringOnce . "git_email" "Git user email" "" -}}
+
 {{- /* opt-in Obsidian AI vault / Claude-memory bundle — independent of trust level */ -}}
 {{- $obsidian := promptBoolOnce . "obsidian_ai_vault" "Enable Obsidian AI vault bundle" false -}}
 {{- $vault := "" -}}
@@ -29,6 +33,10 @@
     homebrew      = {{ $brew }}
     homebrew_full = {{ $brewFull }}
     work_git      = {{ $work }}
+
+[data.git]
+    name  = {{ $gitName | quote }}
+    email = {{ $gitEmail | quote }}
 
 [data.obsidian]
     ai_vault = {{ $obsidian }}

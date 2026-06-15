@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Git global config bootstrap — fires exactly once per machine (run_once_).
+#
+# PATTERN: every key uses a --get guard so existing values are NEVER overwritten.
+# This means re-runs (triggered by script changes) are always safe — they only
+# fill in keys that don't exist yet.
+#
+# To force-update a key on THIS machine:
+#   git config --global <key> <value>
+#
+# To add a new key to ALL future machines:
+#   Add a gc call below — existing machines get it on next apply; current values
+#   on existing machines are untouched (guard skips if already set).
+#
+# To update an existing key across ALL machines:
+#   Wrap it in a new run_once_ script with a different filename — the name
+#   change forces a fresh run. Use the same guard pattern there too.
+set -euo pipefail
+
+# gc <key> <value> — set only if not already present
+gc() {
+  git config --global --get "$1" >/dev/null 2>&1 || git config --global "$1" "$2"
+}
+
+gc user.name  {{ .git.name  | quote }}
+gc user.email {{ .git.email | quote }}
+
+gc core.excludesfile "{{ .chezmoi.homeDir }}/.gitignore_global"
+
+gc commit.gpgSign        false
+gc tag.forceSignAnnotated false
+gc gpg.format            ssh
+{{- if .features.ssh_keys }}
+gc user.signingKey "{{ .chezmoi.homeDir }}/.ssh/id_ed25519.pub"
+{{- end }}
+
+echo "git global config initialized."
