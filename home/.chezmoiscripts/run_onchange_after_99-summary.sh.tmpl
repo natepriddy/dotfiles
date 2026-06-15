@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# Apply summary — always runs last (99 ordering).
+# Reads the per-session log written by earlier scripts and prints a table
+# so you can see at a glance what succeeded, warned, or failed — without
+# scrolling back through interleaved chezmoi output.
+#
+# Log format: PASS|<script>|<message>  (written by apply-log.sh helpers)
+#             WARN|<script>|<message>
+#             FAIL|<script>|<message>
+#
+# Exit codes: 0 = all pass/warn, 1 = any failure
+set -euo pipefail
+
+CHEZMOI_APPLY_LOG="${TMPDIR:-/tmp}/chezmoi-apply-$(id -u).log"
+
+# ── colours ───────────────────────────────────────────────────────────────────
+if [ -t 1 ]; then
+  C_GRN='\033[0;32m'; C_YLW='\033[0;33m'; C_RED='\033[0;31m'; C_RST='\033[0m'
+  C_BLD='\033[1m'
+else
+  C_GRN=''; C_YLW=''; C_RED=''; C_RST=''; C_BLD=''
+fi
+
+printf '\n%b════════════════════════ chezmoi apply summary ════════════════════════%b\n' "${C_BLD}" "${C_RST}"
+
+if [ ! -f "${CHEZMOI_APPLY_LOG}" ]; then
+  printf '%bNo log entries found — scripts may not have run or log was cleared.%b\n' "${C_YLW}" "${C_RST}"
+  printf '════════════════════════════════════════════════════════════════════════\n\n'
+  exit 0
+fi
+
+_fails=0
+_warns=0
+_passes=0
+
+# Print each log entry as a formatted row
+while IFS='|' read -r level script message; do
+  case "${level}" in
+    PASS)
+      printf '  %b✓ %-20s%b %s\n' "${C_GRN}" "${script}" "${C_RST}" "${message}"
+      (( _passes++ )) || true
+      ;;
+    WARN)
+      printf '  %b⚠ %-20s%b %s\n' "${C_YLW}" "${script}" "${C_RST}" "${message}"
+      (( _warns++ )) || true
+      ;;
+    FAIL)
+      printf '  %b✗ %-20s%b %s\n' "${C_RED}" "${script}" "${C_RST}" "${message}"
+      (( _fails++ )) || true
+      ;;
+  esac
+done < "${CHEZMOI_APPLY_LOG}"
+
+printf '────────────────────────────────────────────────────────────────────────\n'
+printf '  %b✓ %d passed%b   %b⚠ %d warned%b   %b✗ %d failed%b\n' \
+  "${C_GRN}" "${_passes}" "${C_RST}" \
+  "${C_YLW}" "${_warns}"  "${C_RST}" \
+  "${C_RED}" "${_fails}"  "${C_RST}"
+
+if [ "${_warns}" -gt 0 ]; then
+  printf '\n  Warnings are non-fatal. Review them before using this machine.\n'
+fi
+
+if [ "${_fails}" -gt 0 ]; then
+  printf '\n  %bFailures require attention — this machine is not fully set up.%b\n' "${C_RED}" "${C_RST}"
+fi
+
+printf '════════════════════════════════════════════════════════════════════════\n\n'
+
+# Clean up log so re-runs start fresh
+rm -f "${CHEZMOI_APPLY_LOG}"
+
+[ "${_fails}" -eq 0 ]

@@ -6,6 +6,8 @@
 # script's hash and the bundle re-fires — no separate hash line needed.
 # brew bundle is idempotent: already-installed packages are skipped.
 set -euo pipefail
+{{ include ".chezmoitemplates/apply-log.sh" }}
+_SCRIPT="homebrew"
 
 # First apply: install-deps installed brew in a separate process whose PATH
 # didn't reach here. Re-source brew's shellenv so the base bundle runs now.
@@ -128,12 +130,16 @@ bundle_and_verify "standard tail" "${tail_file}" 0
 
 if [ "${missing_optional}" = "1" ]; then
   echo "⚠ Some standard-tail packages are missing (no bottle here) — best-effort, continuing." >&2
+  log_warn "${_SCRIPT}" "some homebrew_full packages missing (no bottle for this platform)"
 fi
 if [ "${missing_critical}" = "1" ]; then
   echo "✗ Minimal base is incomplete — the client-safe guarantee is not met on this machine." >&2
+  log_fail "${_SCRIPT}" "base packages missing — client-safe guarantee not met"
 {{- if ne .trust_level "client-restricted" }}
   exit 1
 {{- end }}
+else
+  log_pass "${_SCRIPT}" "all base packages installed"
 fi
 
 echo "brew bundle complete."
