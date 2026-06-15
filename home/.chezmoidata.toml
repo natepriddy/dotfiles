@@ -17,10 +17,8 @@ homebrew_full = false   # standard/heavy tail; init turns this on for non-client
 work_git      = false
 
 [git]
-personal_name  = "Nate Priddy"
-personal_email = ""   # set per-machine via init / local config
-work_email     = ""   # set on company / client machines
-signing_key    = ""
+name  = ""   # set per-machine at init — never commit a real value here
+email = ""   # set per-machine at init — never commit a real value here
 
 [claude]
 # Machine-local overrides only — set real values in ~/.config/chezmoi/chezmoi.toml.

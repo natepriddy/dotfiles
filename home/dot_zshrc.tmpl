@@ -63,6 +63,12 @@ fi
 {{ template "common-aliases" . }}
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Tool paths — added by package managers, consolidated here to avoid zprofile drift
+# ─────────────────────────────────────────────────────────────────────────────
+[ -d "{{ .chezmoi.homeDir }}/.local/bin" ]      && export PATH="$PATH:{{ .chezmoi.homeDir }}/.local/bin"
+[ -d "{{ .chezmoi.homeDir }}/.dotnet/tools" ]   && export PATH="$PATH:{{ .chezmoi.homeDir }}/.dotnet/tools"
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Personal-only
 # ─────────────────────────────────────────────────────────────────────────────
 {{- if or (eq .trust_level "personal-primary") (eq .trust_level "personal-secondary") }}

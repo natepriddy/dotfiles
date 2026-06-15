@@ -110,6 +110,8 @@ check_render() {
     local cfg="${SANDBOX}/cfg-${trust}.toml"
     if ! chezmoi execute-template --init \
             --promptChoice "${TRUST_PROMPT}=${trust}" \
+            --promptString "Git user name=CI User" \
+            --promptString "Git user email=ci@example.com" \
             < "${INIT_TMPL}" > "${cfg}" 2>"${SANDBOX}/cfg-${trust}.err"; then
       fail "  .chezmoi.toml.tmpl failed to render for ${trust}"
       sed 's/^/        /' "${SANDBOX}/cfg-${trust}.err" || true
@@ -189,6 +191,8 @@ check_obsidian_flag() {
     local cfg="${SANDBOX}/obs-${state}.toml"
     if ! chezmoi execute-template --init \
             --promptChoice "${TRUST_PROMPT}=personal-primary" \
+            --promptString "Git user name=CI User" \
+            --promptString "Git user email=ci@example.com" \
             --promptBool "${OBSIDIAN_BOOL_PROMPT}=${en}" \
             --promptString "${OBSIDIAN_VAULT_PROMPT}=${vault}" \
             < "${INIT_TMPL}" > "${cfg}" 2>"${SANDBOX}/obs-${state}.err"; then
@@ -300,6 +304,8 @@ git -C /work -c user.email=ci@local -c user.name=ci commit -qm "ci snapshot" >/d
 chezmoi init --apply \
   --source /work \
   --promptChoice "Machine trust level=client-restricted" \
+  --promptString "Git user name=CI User" \
+  --promptString "Git user email=ci@example.com" \
   --promptBool "Enable Obsidian AI vault bundle=false"
 
 echo "---- rendered ~/.zshrc (head) ----"

@@ -62,7 +62,7 @@ chezmoi execute-template --config /tmp/cfg.toml --source home \
 **`--promptChoice` keys on prompt TEXT, not variable name.** Use
 `"Machine trust level=<tier>"` — NOT `"trust_level=<tier>"`. Wrong key silently falls
 back to `client-restricted`. Every tier then renders identically; bug is invisible.
-Same pattern applies to `--promptBool "Enable experimental Obsidian/Claude-memory bundle=<bool>"`.
+Same pattern applies to `--promptBool "Enable Obsidian AI vault bundle=<bool>"` and `--promptString "Git user email=<addr>"`.
 
 **`.chezmoiignore` matches TARGET names, not `dot_` source names.** Write
 `.claude/settings.json`, never `dot_claude/settings.json`. Patterns are gitignore
@@ -111,5 +111,27 @@ which wraps context7 and handles library resolution automatically.
 `client-restricted` is the fail-closed default; every machine that never ran init
 gets this profile.
 
-Obsidian bundle (`[data.obsidian].enabled`) is **independent of trust tier** —
+Obsidian bundle (`[data.obsidian].ai_vault`) is **independent of trust tier** —
 an explicit opt-in flag defaulting false.
+
+## Patterns
+
+**`run_once_` with `--get` guards — "set once, never overwrite".**
+
+Use this for config files (like `~/.gitconfig`) that should bootstrap on a new
+machine but never be overwritten by dotfile updates once the user has customised them.
+
+```bash
+gc() {
+  git config --global --get "$1" >/dev/null 2>&1 || git config --global "$1" "$2"
+}
+gc user.email "you@example.com"
+```
+
+- First run: key absent → sets it.
+- Re-run after script change: key present → skips it. Local edits are safe.
+- To force-update a key on one machine: `git config --global <key> <value>` manually.
+- To add a new key to all future machines: add a `gc` call — existing machines get
+  it on next apply; already-set keys on those machines are untouched.
+- To push an updated default to ALL machines: wrap it in a new `run_once_` script
+  with a different filename (forces a fresh run). Use the same guard pattern there.
