@@ -71,7 +71,7 @@
     "defaultMode": "auto",
     "disableBypassPermissionsMode": "disable"
   },
-  "model": {{ if eq .trust_level "client-restricted" }}"claude-sonnet-4-6"{{ else }}"claude-opus-4-8"{{ end }},
+  "model": {{ if eq .trust_level "client-restricted" }}"claude-sonnet-4-6[1m]"{{ else }}"claude-opus-4-8"{{ end }},
   "statusLine": {
     "type": "command",
     "command": "bash $HOME/.claude/statusline-command.sh"
