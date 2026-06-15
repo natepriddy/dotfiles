@@ -79,6 +79,7 @@ KEY_TEMPLATES=(
   ".chezmoiscripts/run_onchange_after_20-homebrew.sh.tmpl"
   ".chezmoiscripts/run_onchange_after_40-fonts.sh.tmpl"
   "dot_claude/settings.json.tmpl"
+  "dot_claude/CLAUDE.md.tmpl"
 )
 
 require_chezmoi() {
@@ -166,6 +167,65 @@ check_render() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Check 1b — Obsidian opt-in flag: exercise BOTH states. check_render only covers
+# the disabled path (promptBoolOnce falls back to false), so the templated content
+# inside `{{ if .obsidian.enabled }}` would never be rendered without this.
+# ─────────────────────────────────────────────────────────────────────────────
+OBSIDIAN_BOOL_PROMPT="Enable experimental Obsidian/Claude-memory bundle"
+OBSIDIAN_VAULT_PROMPT="Obsidian vault absolute path"
+
+check_obsidian_flag() {
+  printf '\n%s== 1b. Obsidian opt-in flag (both states) ==%s\n' "${C_BLU}" "${C_RST}"
+  require_chezmoi || return 0
+
+  local failed=0
+  # state: "on"  -> enabled=true  + a throwaway vault path (never written to source)
+  #        "off" -> enabled=false (matches the public fail-closed default)
+  for state in on off; do
+    local en vault
+    if [[ "${state}" == "on" ]]; then en=true; vault="/tmp/validate-vault"; else en=false; vault=""; fi
+    info "obsidian.enabled=${en}"
+
+    local cfg="${SANDBOX}/obs-${state}.toml"
+    if ! chezmoi execute-template --init \
+            --promptChoice "${TRUST_PROMPT}=personal-primary" \
+            --promptBool "${OBSIDIAN_BOOL_PROMPT}=${en}" \
+            --promptString "${OBSIDIAN_VAULT_PROMPT}=${vault}" \
+            < "${INIT_TMPL}" > "${cfg}" 2>"${SANDBOX}/obs-${state}.err"; then
+      fail "  init config failed to render (obsidian=${en})"
+      sed 's/^/        /' "${SANDBOX}/obs-${state}.err" || true
+      failed=1; continue
+    fi
+
+    local dest="${SANDBOX}/obs-dest-${state}" pstate="${SANDBOX}/obs-${state}.boltdb"
+    local claude ignore zshrc
+    claude="$(chezmoi execute-template --config "${cfg}" --source "${SOURCE_DIR}" --destination "${dest}" --persistent-state "${pstate}" < "${SOURCE_DIR}/dot_claude/CLAUDE.md.tmpl" 2>/dev/null)"
+    ignore="$(chezmoi execute-template --config "${cfg}" --source "${SOURCE_DIR}" --destination "${dest}" --persistent-state "${pstate}" < "${SOURCE_DIR}/.chezmoiignore" 2>/dev/null)"
+    zshrc="$(chezmoi execute-template --config "${cfg}" --source "${SOURCE_DIR}" --destination "${dest}" --persistent-state "${pstate}" < "${SOURCE_DIR}/dot_zshrc.tmpl" 2>/dev/null)"
+
+    if [[ "${state}" == "on" ]]; then
+      grep -q '# Obsidian Integration' <<<"${claude}" || { fail "  enabled: CLAUDE.md missing Obsidian section"; failed=1; }
+      grep -q 'export OBSIDIAN_VAULT=' <<<"${zshrc}"   || { fail "  enabled: zshrc missing OBSIDIAN_VAULT export"; failed=1; }
+      grep -q 'skills/obsidian-\*' <<<"${ignore}"      && { fail "  enabled: skills still ignored (should deploy)"; failed=1; }
+      printf '        ok  enabled -> section + export present, skills not ignored\n'
+    else
+      grep -q '# Obsidian Integration' <<<"${claude}"  && { fail "  disabled: CLAUDE.md still has Obsidian section"; failed=1; }
+      grep -q 'export OBSIDIAN_VAULT=' <<<"${zshrc}"    && { fail "  disabled: zshrc exports OBSIDIAN_VAULT (should not)"; failed=1; }
+      grep -q 'skills/obsidian-\*' <<<"${ignore}"       || { fail "  disabled: obsidian skills not ignored (should be)"; failed=1; }
+      printf '        ok  disabled -> no section, no export, skills ignored\n'
+    fi
+  done
+
+  if [[ "${failed}" -eq 0 ]]; then
+    pass "obsidian bundle gates correctly in both states"
+    record PASS "obsidian opt-in flag (both states)"
+  else
+    fail "obsidian flag gating did not behave as expected"
+    record FAIL "obsidian opt-in flag (both states)"
+  fi
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Check 2 — gitleaks (WARN if not installed; this is a public repo)
 # ─────────────────────────────────────────────────────────────────────────────
 check_gitleaks() {
@@ -239,7 +299,8 @@ git -C /work -c user.email=ci@local -c user.name=ci commit -qm "ci snapshot" >/d
 
 chezmoi init --apply \
   --source /work \
-  --promptChoice "Machine trust level=client-restricted"
+  --promptChoice "Machine trust level=client-restricted" \
+  --promptBool "Enable experimental Obsidian/Claude-memory bundle=false"
 
 echo "---- rendered ~/.zshrc (head) ----"
 head -n 20 "$HOME/.zshrc"
@@ -289,6 +350,7 @@ main() {
   fi
 
   check_render
+  check_obsidian_flag
   check_gitleaks
   check_docker_apply
 

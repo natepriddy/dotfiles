@@ -5,7 +5,9 @@ Drop caveman for: security warnings, irreversible action confirmations, ambiguou
 Pushback: hold position when evidence supports it. No capitulation without cause.
 
 ## Context Awareness
+{{- if .obsidian.enabled }}
 - **75%+ context**: offer `obsidian-summary`.
+{{- end }}
 - **High decision density**: recommend recording to memory files.
 
 ---
@@ -17,6 +19,7 @@ Pushback: hold position when evidence supports it. No capitulation without cause
 
 ---
 
+{{ if .obsidian.enabled -}}
 # Obsidian Integration
 Vault: `$OBSIDIAN_VAULT` (or `OBSIDIAN_VAULT` env var)
 Memory layers: `brain/` (semantic) · `AI Sessions/` (episodic) · `AI Tasks/` (working)
@@ -28,6 +31,7 @@ Memory layers: `brain/` (semantic) · `AI Sessions/` (episodic) · `AI Tasks/` (
 
 ---
 
+{{ end -}}
 # Agent Council Charter
 
 ## Prime Directive
