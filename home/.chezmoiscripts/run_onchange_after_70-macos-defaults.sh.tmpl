@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+{{- if eq .chezmoi.os "darwin" }}
+# macOS system defaults — run_onchange_ so this re-fires whenever the script
+# changes (e.g. when you add a new setting). defaults write is idempotent:
+# it is a no-op when the value already matches, so re-runs are always safe.
+#
+# PATTERN: add new settings by appending defaults write calls below.
+#   - Re-running on existing machines is safe (no-op for unchanged keys).
+#   - To remove a setting you added: use `defaults delete <domain> <key>` on
+#     each machine manually — this script only writes, never deletes.
+#
+# GOTCHA: Terminal needs Full Disk Access (System Settings → Privacy & Security
+#   → Full Disk Access) or Sonoma 14+ will silently ignore many writes.
+#
+# GOTCHA: Close System Settings before running, and quit Dock/Finder after.
+#   Running apps overwrite their plist on quit, clobbering your changes.
+set -euo pipefail
+
+###############################################################################
+# Dock
+###############################################################################
+
+# Icon size in pixels. Range 16–128. Default: 36.
+defaults write com.apple.dock tilesize -int 21
+
+# Dock position on screen. Values: left | bottom | right. Default: bottom.
+defaults write com.apple.dock orientation -string "right"
+
+# Show magnification when hovering over icons. Default: false.
+defaults write com.apple.dock magnification -bool true
+
+# Hide the "Recent Applications" section at the end of the Dock. Default: true.
+# Recents adds noise and is mostly redundant with Spotlight/Alfred.
+defaults write com.apple.dock show-recents -bool false
+
+###############################################################################
+# Trackpad
+###############################################################################
+
+# Tap to click — register a tap as a click without physically pressing down.
+# Default: false (physical click required).
+defaults write com.apple.AppleMultitouchTrackpad Clicking -bool true
+# Mirror the setting into the driver domain (both required for reliable apply).
+defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
+
+# Scroll direction: false = traditional (scroll bar follows finger direction).
+# Default: true (natural/reversed, matching touchscreen convention).
+defaults write NSGlobalDomain com.apple.swipescrolldirection -bool false
+
+###############################################################################
+# Finder
+###############################################################################
+
+# Show hidden files and dotfiles. Default: false.
+# Essential for dotfile work — without this ~/.config etc. are invisible in Finder.
+defaults write com.apple.finder AppleShowAllFiles -bool true
+
+# Show the path bar at the bottom of every Finder window. Default: false.
+# Displays the full path to the current folder; click any segment to navigate up.
+defaults write com.apple.finder ShowPathbar -bool true
+
+# Default view style for Finder windows.
+# icnv = icon, Nlsv = list, clmv = column, glyv = gallery. Default: icnv.
+# List view shows dates, sizes, and kinds at a glance.
+defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"
+
+# Default new Finder window location.
+# PfHm = Home, PfDo = Documents, PfDe = Desktop, PfAF = All Files. Default: PfHm.
+defaults write com.apple.finder NewWindowTarget -string "PfAF"
+
+###############################################################################
+# Keyboard (commented out — uncomment to apply developer-friendly settings)
+###############################################################################
+
+# How fast a held key repeats. Lower = faster. Default: 6. Minimum: 1.
+# defaults write NSGlobalDomain KeyRepeat -int 2
+
+# Delay before key repeat kicks in. Lower = shorter. Default: 25. Minimum: 10.
+# defaults write NSGlobalDomain InitialKeyRepeat -int 15
+
+# Disable the press-and-hold accent menu so keys repeat instead.
+# Default: true (accent menu shown). Set false to get key repeat in all apps.
+# defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
+
+###############################################################################
+# Apply — restart affected processes so changes take effect immediately
+###############################################################################
+
+# Restart Dock to apply tilesize, orientation, magnification, show-recents.
+killall Dock
+
+# Restart Finder to apply ShowAllFiles, ShowPathbar, view style, window target.
+killall Finder
+
+echo "macOS defaults applied. Some changes (trackpad, keyboard) may require logout."
+{{- else }}
+echo "Not macOS — skipping macOS defaults."
+{{- end }}
