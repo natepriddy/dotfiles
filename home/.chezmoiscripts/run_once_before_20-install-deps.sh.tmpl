@@ -36,7 +36,10 @@ if ! command -v brew >/dev/null 2>&1; then
   {{- if eq .chezmoi.os "darwin" }}
   # macOS: official installer (idempotent — bails if already present).
   # `|| true` keeps set -e from aborting here; real success is verified below.
-  NONINTERACTIVE=1 /bin/bash -c \
+  # NONINTERACTIVE is set only when there is no TTY (CI/headless) so that
+  # interactive runs can prompt for a sudo password when needed.
+  if [ ! -t 1 ]; then export NONINTERACTIVE=1; fi
+  /bin/bash -c \
     "$(retry curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
   # Make brew available for the rest of THIS script.
   if [ -x /opt/homebrew/bin/brew ]; then
@@ -46,7 +49,8 @@ if ! command -v brew >/dev/null 2>&1; then
   fi
   {{- else if eq .chezmoi.os "linux" }}
   # Linux: Linuxbrew (all homebrew-enabled tiers, incl client minimal base).
-  NONINTERACTIVE=1 /bin/bash -c \
+  if [ ! -t 1 ]; then export NONINTERACTIVE=1; fi
+  /bin/bash -c \
     "$(retry curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
   if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
