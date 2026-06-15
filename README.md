@@ -90,8 +90,9 @@ scripts/local-validate.sh
 - **Wrong trust level "stuck":** the value is cached in
   `~/.config/chezmoi/chezmoi.toml` under `[data]`. Edit it there (or delete the
   file and re-init) — the prompt only fires once.
-- **Locked-down box (no admin):** Homebrew's installer needs admin on macOS. On
-  such machines use `client-restricted`, which never attempts a package install;
+- **Locked-down box (no admin):** Homebrew's installer needs admin on macOS.
+  `client-restricted` installs only the minimal `Brewfile.base`, and its brew
+  bootstrap is non-fatal — if brew can't be installed it logs and continues, so
   the shell + editor config still land and stay usable.
 - **Headless / CI install:** the trust prompt (and any optional bundle prompt)
   must be supplied non-interactively, e.g.
@@ -110,9 +111,13 @@ work.
 | `personal-primary`   | ✓ | ✓ | ✓ | ✓ | – | My main daily-driver machines |
 | `personal-secondary` | ✓ | ✓ | ✓ | – | – | Secondary / spare personal machines |
 | `company`            | ✓ | ✓ | ✓ | – | ✓ | Employer-issued machines |
-| `client-restricted`  | – | – | – | – | ✓ | Locked-down client environments (**default**) |
+| `client-restricted`  | base | – | – | – | ✓ | Locked-down client environments (**default**) |
 
 - **Homebrew** — installs Homebrew (macOS / Linuxbrew) and runs `brew bundle`.
+  *Every* tier gets the minimal, client-safe base (`Brewfile.base` — a comfortable
+  shell + self-contained editor); non-client tiers additionally install the full
+  standard tail (containers, Kubernetes, cloud CLIs, media, …). `base` in the table
+  means base-only.
 - **mise + runtimes** — installs [mise](https://mise.jdx.dev) plus the node /
   python / go / java baseline and global npm CLIs from
   `~/.config/mise/config.toml`.
@@ -120,9 +125,9 @@ work.
 - **SSH keys** — materializes SSH key config.
 - **Work git identity** — uses the work email / signing identity for git.
 
-`client-restricted` is the default precisely because it's the safe one: no
-package installs, no secrets, no keys. You opt *up* into capability, never down
-into exposure.
+`client-restricted` is the default precisely because it's the safe one: only the
+minimal Homebrew base, no heavy toolchain, no runtimes, no secrets, no keys. You
+opt *up* into capability, never down into exposure.
 
 ## What happens on apply
 
