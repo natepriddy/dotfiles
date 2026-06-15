@@ -35,6 +35,9 @@
 #    private overlay (home TBD). Guard against accidental re-add. ──────────────
 .claude/skills/people-trust-files
 
+# ── Neovim plugin lockfile — each machine manages its own via :Lazy sync ────────
+.config/nvim/lazy-lock.json
+
 # ── Secret-bearing ~/.config files — NEVER manage in this public repo. These
 #    hold live credentials (oauth tokens, api keys, JWTs). The guard exists so a
 #    `chezmoi add`/re-add or an `add -A` sweep can never pull them into source.
