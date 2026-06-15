@@ -1,0 +1,110 @@
+# Working on natepriddy/dotfiles
+
+Public chezmoi dotfiles repo. Trust-tiered: one source tree, a per-machine
+`trust_level` decides what materializes at `chezmoi apply` time.
+
+**This file is about editing the repo.** It is NOT `home/dot_claude/CLAUDE.md` —
+that is deployment payload that ships to `~/.claude/CLAUDE.md` and governs Claude
+globally. Different job, different file.
+
+## Safety rules (incidents happen here)
+
+**This is a public repo. Fail closed.**
+
+- No secrets, tokens, keys, emails, private paths in source. gitleaks + trufflehog
+  are hard CI gates on full history. A leaked credential is permanent.
+- **Never `git add -A` or `chezmoi add -A`.** The `.chezmoiignore` guards
+  (`gh/hosts.yml`, `context7`, `temporalio`, copilot dirs) only protect against
+  targeted re-add. Sweeps can stage live creds from `$HOME`. Always stage explicit
+  paths: `git add home/dot_zshrc.tmpl home/.chezmoiignore`.
+- For multi-file or risky work: **isolated git worktree**, not the live checkout.
+  A concurrent `chezmoi apply` or another session doing `add -A` will race you.
+- Don't edit deployed files in `$HOME`. Edit source here; the user applies.
+
+## Layout
+
+`.chezmoiroot = home` — the chezmoi source is `home/`, not repo root.
+
+```
+home/
+  .chezmoi.toml.tmpl    init prompt → trust_level → feature flags
+  .chezmoidata.toml     public fail-closed defaults (never put secrets here)
+  .chezmoiignore        target-name guards (see gotchas below)
+  .chezmoitemplates/    shared partials — Brewfile.base, claude-obsidian.md, …
+  .chezmoiscripts/      ordered bootstrap + install scripts
+  dot_claude/           → ~/.claude/  (payload: CLAUDE.md, settings, skills)
+  dot_config/           → ~/.config/  (mise, nvim, zed, zellij, …)
+  dot_zshrc.tmpl        → ~/.zshrc
+```
+
+`home/dot_claude/` and `home/dot_config/` are **deployment payload**. Editing them
+changes the user's machine, not repo tooling.
+
+## chezmoi gotchas (read before touching templates)
+
+**Two-stage rendering.** Target templates reference `.trust_level` and `.features.*`
+which only exist after the init config is rendered. Skipping stage 1 silently renders
+as `client-restricted`. Correct render:
+
+```bash
+# Stage 1: render the init config
+chezmoi execute-template --init \
+  --promptChoice "Machine trust level=personal-primary" \
+  < home/.chezmoi.toml.tmpl > /tmp/cfg.toml
+
+# Stage 2: render a target against that config
+chezmoi execute-template --config /tmp/cfg.toml --source home \
+  < home/dot_zshrc.tmpl
+```
+
+**`--promptChoice` keys on prompt TEXT, not variable name.** Use
+`"Machine trust level=<tier>"` — NOT `"trust_level=<tier>"`. Wrong key silently falls
+back to `client-restricted`. Every tier then renders identically; bug is invisible.
+Same pattern applies to `--promptBool "Enable experimental Obsidian/Claude-memory bundle=<bool>"`.
+
+**`.chezmoiignore` matches TARGET names, not `dot_` source names.** Write
+`.claude/settings.json`, never `dot_claude/settings.json`. Patterns are gitignore
+semantics — no inline comments on a pattern line.
+
+**`home/.chezmoitemplates/Brewfile.base` is a plain file — no `{{ }}`.** Kept plain
+so `brew bundle check --file=…` and standalone linting work on it. Tier-specific
+packages go in the `homebrew_full` block of `run_onchange_after_20-homebrew.sh.tmpl`.
+
+**A gated-off `.sh.tmpl` must still be valid bash** — render it to a shebang only
+(`#!/usr/bin/env bash`) for the disabled tier, not empty.
+
+**Renaming a prompt string requires updating it in three places:**
+`home/.chezmoi.toml.tmpl`, `scripts/local-validate.sh` (`TRUST_PROMPT` / `OBSIDIAN_BOOL_PROMPT`),
+and `.github/workflows/ci.yml`. They must match exactly.
+
+## Test suite
+
+```bash
+scripts/local-validate.sh
+```
+
+Renders every key template for every trust tier, runs gitleaks, and does a
+sandboxed `chezmoi init --apply` in Docker. Never touches real `$HOME`, never pushes.
+Run after any multi-file edit.
+
+CI (`.github/workflows/ci.yml`) extends this: 3 trust levels × Linux + macOS,
+idempotency, gitleaks, trufflehog. Read the inline comments for authoritative
+rationale on prompt-flag semantics and no-op brew/mise shims.
+
+Always test against **`client-restricted` AND one full tier** — they take different
+template branches.
+
+## Trust tiers
+
+| Tier | Features |
+|---|---|
+| `personal-primary` | All: homebrew full, mise + runtimes, secrets, ssh_keys |
+| `personal-secondary` | homebrew full, mise, secrets (no ssh, no work-git) |
+| `company` | homebrew full, mise, secrets, work_git (no ssh) |
+| `client-restricted` | **default** — homebrew base only, no runtimes, no secrets, no ssh |
+
+`client-restricted` is the fail-closed default; every machine that never ran init
+gets this profile.
+
+Obsidian bundle (`[data.obsidian].enabled`) is **independent of trust tier** —
+an explicit opt-in flag defaulting false.
