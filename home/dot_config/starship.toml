@@ -1,0 +1,16 @@
+# Minimal left prompt; everything else on the right.
+add_newline = false
+format = """$directory$character"""
+right_format = """$all"""
+
+[aws]
+format = 'on [$symbol($profile )(\($region\) )]($style)'
+style = 'bold blue'
+symbol = "  "
+disabled = true
+
+[golang]
+format = '[ $version](bold cyan) '
+
+[zig]
+symbol = '⚡️ '

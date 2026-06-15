@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# Runs ONCE per machine, BEFORE chezmoi writes any files (run_once_before_).
+# Installs only the base toolchain needed to bootstrap apply: Homebrew + mise.
+# Runtimes (node/python/go/java) and brew packages are NOT installed here —
+# those are handled by the after-scripts (30-mise, 20-homebrew) once the
+# managed config files (~/.config/mise/config.toml, Brewfile) are in place.
+#
+# Every install is guarded by `command -v` so re-runs / partial installs no-op.
+# On client-restricted, Homebrew still bootstraps (for the minimal Brewfile.base),
+# but its failure is non-fatal — apply proceeds so fonts, dotfiles, and the
+# command-v-guarded shell still land. The mise step is skipped on client-restricted.
+set -euo pipefail
+
+{{ if .features.homebrew -}}
+# ── Homebrew ─────────────────────────────────────────────────────────
+# Bootstraps on every homebrew-enabled tier, INCLUDING client-restricted (it
+# needs brew for the minimal Brewfile.base). A failed bootstrap is fatal on
+# trusted tiers — so a broken primary toolchain is noticed — but non-fatal on
+# client-restricted, where apply must keep going so the box stays usable.
+if ! command -v brew >/dev/null 2>&1; then
+  echo "Installing Homebrew…"
+  {{- if eq .chezmoi.os "darwin" }}
+  # macOS: official installer (idempotent — bails if already present).
+  # `|| true` keeps set -e from aborting here; real success is verified below.
+  NONINTERACTIVE=1 /bin/bash -c \
+    "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
+  # Make brew available for the rest of THIS script.
+  if [ -x /opt/homebrew/bin/brew ]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [ -x /usr/local/bin/brew ]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  fi
+  {{- else if eq .chezmoi.os "linux" }}
+  # Linux: Linuxbrew (all homebrew-enabled tiers, incl client minimal base).
+  NONINTERACTIVE=1 /bin/bash -c \
+    "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
+  if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+  fi
+  {{- end }}
+  {{- if or (eq .chezmoi.os "darwin") (eq .chezmoi.os "linux") }}
+  # Verify the bootstrap produced a usable brew; degrade per trust tier.
+  if ! command -v brew >/dev/null 2>&1; then
+  {{- if eq .trust_level "client-restricted" }}
+    echo "Homebrew bootstrap failed — continuing without it (client-restricted stays usable)." >&2
+  {{- else }}
+    echo "Homebrew bootstrap failed on a trusted tier — aborting apply." >&2
+    exit 1
+  {{- end }}
+  fi
+  {{- else }}
+  echo "Homebrew not supported on {{ .chezmoi.os }} — skipping."
+  {{- end }}
+else
+  echo "Homebrew already installed — skipping."
+fi
+{{ end -}}
+
+{{ if ne .trust_level "client-restricted" -}}
+# ── mise (runtime version manager) ───────────────────────────────────
+# Installs the binary only. `mise install` (pulling node/python/go/java and the
+# npm: globals from ~/.config/mise/config.toml) runs in the after-script once
+# that config file has been written by apply.
+if ! command -v mise >/dev/null 2>&1; then
+  echo "Installing mise…"
+  if command -v brew >/dev/null 2>&1; then
+    brew install mise
+  else
+    curl -fsSL https://mise.run | sh
+  fi
+else
+  echo "mise already installed — skipping."
+fi
+{{ end -}}
+
+echo "Base toolchain bootstrap complete (trust: {{ .trust_level }})."

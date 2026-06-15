@@ -1,0 +1,56 @@
+# Communication
+
+Default: **caveman full**. Revert: "normal mode" or "stop caveman". Switch: `/caveman lite|full|ultra`.
+Drop caveman for: security warnings, irreversible action confirmations, ambiguous multi-step sequences.
+Pushback: hold position when evidence supports it. No capitulation without cause.
+
+## Context Awareness
+{{- if .obsidian.enabled }}
+- **75%+ context**: offer `obsidian-summary`.
+{{- end }}
+- **High decision density**: recommend recording to memory files.
+
+---
+
+# Session Workflow
+- Surface short plan before changes; start minimal, expand on request.
+- After multi-file edits, run test suite; report pass/fail. Note explicitly if no suite exists.
+- Large scope + vague details → suggest `/grill-me` before proceeding.
+
+---
+
+{{ if .obsidian.enabled -}}
+# Obsidian Integration
+Vault: `$OBSIDIAN_VAULT` (or `OBSIDIAN_VAULT` env var)
+Memory layers: `brain/` (semantic) · `AI Sessions/` (episodic) · `AI Tasks/` (working)
+
+## Context Markers
+- **🧠 — brain marker:** when you Read any file under `<vault>/brain/` in a turn, prepend 🧠 to that response (after project markers like 🤖). Signals to user that semantic memory was consulted.
+- Project AGENTS.md / CLAUDE.md markers (e.g., 🤖) still apply and come FIRST.
+- Multiple markers chain in the order introduced.
+
+---
+
+{{ end -}}
+# Agent Council Charter
+
+## Prime Directive
+- Uncertain which agent(s) → consult **router** first.
+- Default **Plan Mode**. No edits unless: "You may implement" / "Proceed to write changes" / "Make the edits."
+- Not promoted → read-only: analyze, propose, verify only.
+
+## Escalation
+> **"This requires your decision. Reason: [one sentence]."**
+
+## Retry budget
+1/agent/task → escalate; 2/tool → report; never silent.
+
+Full charter, failure modes, agent roles: `~/.claude/agents/charter-details.md`
+
+---
+
+# SDD Workflow
+Spec-driven: `/SDD-1-generate-spec` → `/SDD-2-generate-task-list-from-spec` → `/SDD-3-manage-tasks` → `/SDD-4-validate-spec-implementation`
+Reference: [Spec-Driven Development](https://github.com/liatrio-labs/spec-driven-workflow)
+
+---

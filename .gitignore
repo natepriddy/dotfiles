@@ -1,0 +1,9 @@
+# OS noise
+.DS_Store
+*.swp
+*.swo
+
+# chezmoi machine-local data.
+# Real per-machine data lives in ~/.config/chezmoi/chezmoi.toml (outside this repo).
+# This entry is belt-and-suspenders in case a local data file is ever used here.
+home/.chezmoidata.local.toml

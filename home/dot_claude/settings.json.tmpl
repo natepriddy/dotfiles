@@ -1,0 +1,100 @@
+{{/* ~/.claude/settings.json — managed by chezmoi (trust: {{ .trust_level }}). */ -}}
+{{/* Edit the source, never the deployed file: chezmoi edit ~/.claude/settings.json && chezmoi apply */ -}}
+{{/* Secrets & machine-local paths come from ~/.config/chezmoi/chezmoi.toml (never committed). */ -}}
+{
+  "cleanupPeriodDays": 14,
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"{{ if .claude.context7_api_key }},
+    "CONTEXT7_API_KEY": {{ .claude.context7_api_key | quote }}{{ end }}
+  },
+  "permissions": {
+    "allow": [
+      "mcp__pencil",
+      "Read($HOME/Documents/Vaults/**)",
+      "Edit($HOME/Documents/Vaults/**)",
+      "Write($HOME/Documents/Vaults/**)",
+      "Glob($HOME/Documents/Vaults/**)",
+      "Grep($HOME/Documents/Vaults/**)",
+      "Bash(ls:*)",
+      "Bash(pwd:*)",
+      "Bash(which:*)",
+      "Bash(env:*)",
+      "Bash(echo:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(diff:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git branch:*)",
+      "Bash(git show:*)",
+      "Bash(git fetch:*)",
+      "Bash(git stash list:*)",
+      "Bash(pnpm list:*)",
+      "Bash(pnpm why:*)",
+      "Bash(npx playwright test:*)",
+      "Bash(npx:*)",
+      "Bash(npm:*)",
+      "Bash(./mvnw:*)",
+      "Bash(./gradlew:*)",
+      "Bash(pnpm turbo run:*)",
+      "Bash(pnpm run:*)",
+      "Bash(pnpm exec:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker compose ps:*)",
+      "Bash(mkdir:*)",
+      "Bash(gh pr:*)",
+      "Bash(gh issue:*)",
+      "Bash(gh api:*)",
+      "mcp__context7"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(rm -fr:*)",
+      "Bash(sudo:*)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/credentials*)",
+      "Read(**/*secret*)",
+      "Read(**/*.pem)",
+      "Read(**/id_rsa*)",
+      "Read(**/id_ed25519*)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git rebase:*)",
+      "Bash(git commit --amend:*)"
+    ],
+    "defaultMode": "auto",
+    "disableBypassPermissionsMode": "disable"
+  },
+  "model": "claude-opus-4-8",
+  "statusLine": {
+    "type": "command",
+    "command": "bash $HOME/.claude/statusline-command.sh"
+  },
+  "enabledPlugins": {
+{{- if .claude.plugins_dir }}
+    "council@nate-claude": true,
+{{- end }}
+    "superpowers@claude-plugins-official": true,
+    "figma@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true
+  },
+{{- if .claude.plugins_dir }}
+  "extraKnownMarketplaces": {
+    "nate-claude": {
+      "source": {
+        "source": "directory",
+        "path": {{ .claude.plugins_dir | quote }}
+      }
+    }
+  },
+{{- end }}
+  "effortLevel": "medium",
+  "theme": "dark",
+  "skipAutoPermissionPrompt": true
+}

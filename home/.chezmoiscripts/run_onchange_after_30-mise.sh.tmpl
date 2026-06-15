@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+{{- if ne .trust_level "client-restricted" }}
+# Runs AFTER apply, and re-runs whenever this rendered content changes
+# (run_onchange_after_). By the time this fires, ~/.config/mise/config.toml has
+# been written by chezmoi, so `mise install` can pull the runtimes + npm globals
+# declared there. mise install is idempotent: already-installed tools are skipped.
+#
+# The hash below is what makes this re-run when the mise config changes: bump it
+# implicitly by editing the managed config — chezmoi templates the file contents
+# into this comment so the script's hash tracks the config it depends on.
+#
+# mise config hash: {{ include "dot_config/mise/config.toml.tmpl" | sha256sum }}
+set -euo pipefail
+
+# First apply: install-deps installed mise (via brew or ~/.local/bin) in a
+# separate process whose PATH didn't reach here. Put it back on PATH.
+{{ include ".chezmoitemplates/path-bootstrap.sh" -}}
+
+command -v mise >/dev/null 2>&1 || { echo "mise not found — skipping install"; exit 0; }
+
+echo "Installing mise-managed runtimes + globals…"
+# `mise install` (no args) installs everything declared in the resolved config.
+# -y/--yes auto-confirms any prompts (e.g. trusting the config dir).
+mise install --yes
+
+echo "mise install complete."
+{{- end }}

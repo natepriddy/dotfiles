@@ -1,0 +1,66 @@
+# .chezmoiignore — matched against TARGET paths (real names, not dot_ source names).
+# Correctness of the exclusions below is enforced primarily by NOT having these in
+# the source tree; this file is the guard against accidental `chezmoi add`/re-add.
+
+# ── Claude Code runtime / cache state — never manage from source ──────────────
+.claude/projects
+.claude/sessions
+.claude/todos
+.claude/tasks
+.claude/cache
+.claude/backups
+.claude/debug
+.claude/downloads
+.claude/file-history
+.claude/ide
+.claude/paste-cache
+.claude/plugins
+.claude/session-env
+.claude/shell-snapshots
+.claude/statsig
+.claude/telemetry
+.claude/usage-data
+.claude/history.jsonl
+.claude/policy-limits.json
+.claude/stats-cache.json
+.claude/.last-cleanup
+.claude/settings.local.json
+.claude/CLAUDE.original.md
+
+# ── npm-managed skill bodies (materialized by run_onchange install-skills from
+#    the lockfile) — chezmoi manages only the lockfile + install script ─────────
+.agents/skills
+
+# ── Private carve-out: PII skill is NOT in this public repo. Handled in a
+#    private overlay (home TBD). Guard against accidental re-add. ──────────────
+.claude/skills/people-trust-files
+
+# ── Secret-bearing ~/.config files — NEVER manage in this public repo. These
+#    hold live credentials (oauth tokens, api keys, JWTs). The guard exists so a
+#    `chezmoi add`/re-add or an `add -A` sweep can never pull them into source.
+#    If a tier ever needs these, they go through the v2 secrets backend, not here.
+#    (gitignore semantics: no inline comments — each pattern stands alone.)
+.config/context7
+.config/gh/hosts.yml
+.config/temporalio
+.config/github-copilot
+.config/gh-copilot
+
+# ── Experimental Obsidian/Claude-memory bundle — opt-in per machine via
+#    [data.obsidian].enabled (default false). When disabled, the obsidian-*
+#    skills do not deploy. The CLAUDE.md memory section and OBSIDIAN_VAULT export
+#    are gated separately (in CLAUDE.md.tmpl and dot_zshrc.tmpl) on the same flag.
+{{- if not .obsidian.enabled }}
+.claude/skills/obsidian-*
+{{- end }}
+
+# ── Personal/company-tier app configs — kept off minimal client boxes. They are
+#    inert without their tool installed, but client-restricted stays lean. These
+#    deploy on personal-* and company tiers; here we ignore them ONLY on client.
+{{- if eq .trust_level "client-restricted" }}
+.config/zellij
+.config/zed
+.config/ccstatusline
+.config/gh-dash
+.config/gh/config.yml
+{{- end }}
