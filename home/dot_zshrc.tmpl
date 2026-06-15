@@ -89,3 +89,11 @@ export OBSIDIAN_VAULT={{ .obsidian.vault | quote }}
 # Add current project paths/aliases here when needed, e.g.:
 #   {{ "{{" }} if eq .trust_level "company" {{ "}}" }} export WORK_HOME=... {{ "{{" }} end {{ "}}" }}
 # ─────────────────────────────────────────────────────────────────────────────
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Machine-local secrets — never committed, never managed by chezmoi.
+# Create ~/.zshrc.local and export any machine-specific env vars there:
+#   export ANTHROPIC_API_KEY="sk-..."
+#   export PROP_IO_BASE_URL="https://..."
+# ─────────────────────────────────────────────────────────────────────────────
+[ -f "${HOME}/.zshrc.local" ] && source "${HOME}/.zshrc.local"
