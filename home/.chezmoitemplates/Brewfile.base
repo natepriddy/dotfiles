@@ -46,3 +46,4 @@ brew "tree-sitter"
 # ── multiplexers ─────────────────────────────────────────────────
 brew "zellij"
 brew "tmux"
+brew "herdr"
