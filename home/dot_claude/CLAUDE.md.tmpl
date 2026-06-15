@@ -20,17 +20,7 @@ Pushback: hold position when evidence supports it. No capitulation without cause
 ---
 
 {{ if .obsidian.enabled -}}
-# Obsidian Integration
-Vault: `$OBSIDIAN_VAULT` (or `OBSIDIAN_VAULT` env var)
-Memory layers: `brain/` (semantic) · `AI Sessions/` (episodic) · `AI Tasks/` (working)
-
-## Context Markers
-- **🧠 — brain marker:** when you Read any file under `<vault>/brain/` in a turn, prepend 🧠 to that response (after project markers like 🤖). Signals to user that semantic memory was consulted.
-- Project AGENTS.md / CLAUDE.md markers (e.g., 🤖) still apply and come FIRST.
-- Multiple markers chain in the order introduced.
-
----
-
+{{ include ".chezmoitemplates/claude-obsidian.md" -}}
 {{ end -}}
 # Agent Council Charter
 
