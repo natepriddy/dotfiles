@@ -18,7 +18,7 @@ cursor-style-blink = true
 scrollback-limit = 10000
 
 # ── Shell integration ─────────────────────────────────────────────────────────
-shell-integration = true
+shell-integration = zsh
 
 # ── Keybindings ───────────────────────────────────────────────────────────────
 keybind = cmd+shift+comma=reload_config
