@@ -17,6 +17,31 @@
 set -euo pipefail
 
 ###############################################################################
+# Full Disk Access check
+###############################################################################
+
+# On macOS Sonoma 14+, many `defaults write` calls silently do nothing without
+# Full Disk Access. We detect this by probing the TCC database — it is only
+# readable when FDA is granted. sqlite3 ships with macOS, no install needed.
+#
+# We warn and continue (not exit) because some domains still apply without FDA,
+# and partial application is better than no application.
+_tcc_db="$HOME/Library/Application Support/com.apple.TCC/TCC.db"
+if ! sqlite3 "${_tcc_db}" "SELECT 1 FROM access LIMIT 1" >/dev/null 2>&1; then
+  echo "" >&2
+  echo "⚠️  WARNING: Terminal does not have Full Disk Access." >&2
+  echo "   macOS Sonoma 14+ silently ignores many defaults writes without it." >&2
+  echo "   Settings in this script may not apply." >&2
+  echo "" >&2
+  echo "   Fix: System Settings → Privacy & Security → Full Disk Access → add Terminal" >&2
+  echo "   Then re-run: chezmoi apply" >&2
+  echo "" >&2
+else
+  echo "✓ Full Disk Access confirmed — defaults writes will apply."
+fi
+unset _tcc_db
+
+###############################################################################
 # Dock
 ###############################################################################
 
