@@ -46,6 +46,14 @@
 .config/github-copilot
 .config/gh-copilot
 
+# ── Experimental Obsidian/Claude-memory bundle — opt-in per machine via
+#    [data.obsidian].enabled (default false). When disabled, the obsidian-*
+#    skills do not deploy. The CLAUDE.md memory section and OBSIDIAN_VAULT export
+#    are gated separately (in CLAUDE.md.tmpl and dot_zshrc.tmpl) on the same flag.
+{{- if not .obsidian.enabled }}
+.claude/skills/obsidian-*
+{{- end }}
+
 # ── Personal/company-tier app configs — kept off minimal client boxes. They are
 #    inert without their tool installed, but client-restricted stays lean. These
 #    deploy on personal-* and company tiers; here we ignore them ONLY on client.

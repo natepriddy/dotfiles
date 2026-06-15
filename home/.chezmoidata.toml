@@ -27,3 +27,10 @@ signing_key    = ""
 # Empty here = fail-closed: no secret emitted, official plugins only.
 context7_api_key = ""   # empty -> CONTEXT7_API_KEY is omitted from settings.json (ctx7 runs unauthenticated)
 plugins_dir      = ""   # empty -> the nate-claude marketplace + council plugin are omitted; abs path enables them
+
+[obsidian]
+# Experimental, opt-in Obsidian/Claude-memory bundle. NOT tied to trust level.
+# Fail-closed: default disabled everywhere; init (or a machine-local override)
+# enables it per-machine. Real vault path lives only in machine-local config.
+enabled = false   # gates the obsidian-* skills, the CLAUDE.md memory section, and the OBSIDIAN_VAULT export
+vault   = ""      # absolute vault path; empty -> OBSIDIAN_VAULT stays unset and the bundle is inert

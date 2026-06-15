@@ -70,6 +70,14 @@ fi
 {{- end }}
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Obsidian / Claude-memory bundle — experimental, opt-in (.obsidian.enabled).
+# Only exported when the bundle is enabled AND a vault path is set per-machine.
+# ─────────────────────────────────────────────────────────────────────────────
+{{- if and .obsidian.enabled .obsidian.vault }}
+export OBSIDIAN_VAULT={{ .obsidian.vault | quote }}
+{{- end }}
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Work-only (company tier) — intentionally empty in v1.
 # Add current project paths/aliases here when needed, e.g.:
 #   {{ "{{" }} if eq .trust_level "company" {{ "}}" }} export WORK_HOME=... {{ "{{" }} end {{ "}}" }}
