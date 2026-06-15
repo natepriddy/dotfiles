@@ -24,6 +24,7 @@ on:
     branches: [main, v1-chezmoi]
   pull_request:
     branches: [main, v1-chezmoi]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -218,6 +219,7 @@ jobs:
   apply-macos:
     name: apply (macos-latest)
     runs-on: macos-latest
+    if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout
         uses: actions/checkout@v4

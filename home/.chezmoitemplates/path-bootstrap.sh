@@ -5,7 +5,7 @@
 #   - Homebrew: the Apple Silicon (/opt/homebrew) and Linuxbrew (/home/linuxbrew)
 #     prefixes are NOT on the default PATH; /usr/local already is.
 #   - mise's standalone installer drops its binary in ~/.local/bin.
-for _brew in /opt/homebrew/bin/brew /usr/local/bin/brew /home/linuxbrew/.linuxbrew/bin/brew; do
+for _brew in /opt/homebrew/bin/brew /usr/local/bin/brew /home/linuxbrew/.linuxbrew/bin/brew "${HOME}/homebrew/bin/brew"; do
   if [ -x "${_brew}" ]; then eval "$("${_brew}" shellenv)"; break; fi
 done
 unset _brew
