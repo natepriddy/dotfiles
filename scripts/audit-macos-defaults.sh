@@ -77,6 +77,12 @@ check com.apple.AppleMultitouchTrackpad \
 check com.apple.driver.AppleBluetoothMultitouch.trackpad \
       Clicking "1" "Trackpad tap-to-click (Bluetooth driver)"
 
+check com.apple.AppleMultitouchTrackpad \
+      TrackpadRightClick "1" "Trackpad two-finger right-click enabled"
+
+check com.apple.driver.AppleBluetoothMultitouch.trackpad \
+      TrackpadRightClick "1" "Trackpad two-finger right-click (Bluetooth driver)"
+
 check NSGlobalDomain \
       com.apple.swipescrolldirection "0" "Scroll direction = traditional (not natural)"
 

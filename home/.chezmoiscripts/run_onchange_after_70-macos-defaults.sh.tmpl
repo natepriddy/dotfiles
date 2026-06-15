@@ -71,6 +71,15 @@ defaults write com.apple.AppleMultitouchTrackpad Clicking -bool true
 # Mirror the setting into the driver domain (both required for reliable apply).
 defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
 
+# Secondary click (right-click) via two-finger tap.
+# TrackpadRightClick: two-finger tap = right-click.
+# Default: false.
+defaults write com.apple.AppleMultitouchTrackpad TrackpadRightClick -bool true
+defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadRightClick -bool true
+# Ensure click mode is set to two-finger (1 = two fingers, 0 = off, 2 = bottom-right corner).
+defaults write com.apple.AppleMultitouchTrackpad TrackpadCornerSecondaryClick -int 0
+defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadCornerSecondaryClick -int 0
+
 # Scroll direction: false = traditional (scroll bar follows finger direction).
 # Default: true (natural/reversed, matching touchscreen convention).
 defaults write NSGlobalDomain com.apple.swipescrolldirection -bool false
