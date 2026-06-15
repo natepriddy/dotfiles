@@ -70,10 +70,10 @@ fi
 {{- end }}
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Obsidian / Claude-memory bundle — experimental, opt-in (.obsidian.enabled).
+# Obsidian AI vault / Claude-memory bundle — opt-in (.obsidian.ai_vault).
 # Only exported when the bundle is enabled AND a vault path is set per-machine.
 # ─────────────────────────────────────────────────────────────────────────────
-{{- if and .obsidian.enabled .obsidian.vault }}
+{{- if and .obsidian.ai_vault .obsidian.vault }}
 export OBSIDIAN_VAULT={{ .obsidian.vault | quote }}
 {{- end }}
 

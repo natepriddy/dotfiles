@@ -169,9 +169,9 @@ check_render() {
 # ─────────────────────────────────────────────────────────────────────────────
 # Check 1b — Obsidian opt-in flag: exercise BOTH states. check_render only covers
 # the disabled path (promptBoolOnce falls back to false), so the templated content
-# inside `{{ if .obsidian.enabled }}` would never be rendered without this.
+# inside `{{ if .obsidian.ai_vault }}` would never be rendered without this.
 # ─────────────────────────────────────────────────────────────────────────────
-OBSIDIAN_BOOL_PROMPT="Enable experimental Obsidian/Claude-memory bundle"
+OBSIDIAN_BOOL_PROMPT="Enable Obsidian AI vault bundle"
 OBSIDIAN_VAULT_PROMPT="Obsidian vault absolute path"
 
 check_obsidian_flag() {
@@ -184,7 +184,7 @@ check_obsidian_flag() {
   for state in on off; do
     local en vault
     if [[ "${state}" == "on" ]]; then en=true; vault="/tmp/validate-vault"; else en=false; vault=""; fi
-    info "obsidian.enabled=${en}"
+    info "obsidian.ai_vault=${en}"
 
     local cfg="${SANDBOX}/obs-${state}.toml"
     if ! chezmoi execute-template --init \
@@ -300,7 +300,7 @@ git -C /work -c user.email=ci@local -c user.name=ci commit -qm "ci snapshot" >/d
 chezmoi init --apply \
   --source /work \
   --promptChoice "Machine trust level=client-restricted" \
-  --promptBool "Enable experimental Obsidian/Claude-memory bundle=false"
+  --promptBool "Enable Obsidian AI vault bundle=false"
 
 echo "---- rendered ~/.zshrc (head) ----"
 head -n 20 "$HOME/.zshrc"
