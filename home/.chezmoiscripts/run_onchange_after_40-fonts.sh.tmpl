@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# Installs Nerd Fonts at the USER level — no admin, no Homebrew cask — so they
+# work on every tier (including locked client-restricted boxes) and on both
+# macOS and Linux. run_onchange_: re-runs whenever this rendered script changes.
+#
+#   Hack                 — primary coding/terminal font with glyphs
+#   NerdFontsSymbolsOnly — glyph-only fallback you can layer UNDER a corporate-
+#                          locked terminal font when you can't change the primary.
+#
+# Non-fatal by design: missing curl/unzip or no network -> warn and exit 0, never
+# break `chezmoi apply`. Fonts are cosmetic; the shell (eza --icons, starship)
+# degrades gracefully without them.
+set -euo pipefail
+
+# Tracks the project's newest release. Swap to a pinned tag
+# (…/releases/download/v3.3.0/…) if you need reproducible/air-gapped installs.
+BASE_URL="https://github.com/ryanoasis/nerd-fonts/releases/latest/download"
+FONTS=("Hack" "NerdFontsSymbolsOnly")
+
+{{ if eq .chezmoi.os "darwin" -}}
+FONT_DIR="${HOME}/Library/Fonts"
+{{- else -}}
+FONT_DIR="${HOME}/.local/share/fonts"
+{{- end }}
+
+for tool in curl unzip; do
+  command -v "${tool}" >/dev/null 2>&1 \
+    || { echo "fonts: ${tool} not found — skipping font install"; exit 0; }
+done
+
+tmp="$(mktemp -d)"
+trap 'rm -rf "${tmp}"' EXIT
+
+changed=0
+for font in "${FONTS[@]}"; do
+  dest="${FONT_DIR}/${font}"
+  # Idempotent: each font extracts into its own subdir; skip if already populated.
+  if ls "${dest}"/*.ttf >/dev/null 2>&1; then
+    echo "fonts: ${font} already installed — skipping"
+    continue
+  fi
+  echo "fonts: downloading ${font}…"
+  if ! curl -fsSL --retry 2 -o "${tmp}/${font}.zip" "${BASE_URL}/${font}.zip"; then
+    echo "fonts: download failed for ${font} — skipping (cosmetic, non-fatal)"
+    continue
+  fi
+  mkdir -p "${dest}"
+  # Extract only the .ttf files; skip READMEs/licenses bundled in the zip.
+  if ! unzip -oq "${tmp}/${font}.zip" "*.ttf" -d "${dest}"; then
+    echo "fonts: unzip failed for ${font} — skipping"
+    continue
+  fi
+  changed=1
+  echo "fonts: installed ${font} -> ${dest}"
+done
+
+{{ if ne .chezmoi.os "darwin" -}}
+# Linux: refresh fontconfig so apps pick up the new fonts immediately.
+# (macOS scans ~/Library/Fonts automatically — no cache refresh needed.)
+if [ "${changed}" -eq 1 ] && command -v fc-cache >/dev/null 2>&1; then
+  fc-cache -f "${FONT_DIR}" >/dev/null 2>&1 || true
+fi
+{{- end }}
+
+echo "fonts: done."

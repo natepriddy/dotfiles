@@ -67,8 +67,7 @@ brew "imagemagick"
 brew "fontconfig"
 {{- if eq .chezmoi.os "darwin" }}
 
-# casks (macOS only)
-cask "font-hack-nerd-font"
+# casks (macOS only) — nerd fonts handled cross-platform by 40-fonts script
 cask "wezterm"
 cask "rectangle"
 {{- end }}
