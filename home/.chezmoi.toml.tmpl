@@ -15,7 +15,10 @@
 
 {{- /* experimental opt-in Obsidian/Claude-memory bundle — independent of trust level */ -}}
 {{- $obsidian := promptBoolOnce . "obsidian_enabled" "Enable experimental Obsidian/Claude-memory bundle" false -}}
-{{- $vault := promptStringOnce . "obsidian_vault" "Obsidian vault absolute path (blank if disabled)" "" -}}
+{{- $vault := "" -}}
+{{- if $obsidian -}}
+{{-   $vault = promptStringOnce . "obsidian_vault" "Obsidian vault absolute path" "" -}}
+{{- end -}}
 
 [data]
     trust_level = {{ $trust | quote }}
