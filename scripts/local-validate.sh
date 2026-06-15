@@ -218,6 +218,10 @@ check_docker_apply() {
   container_script='
 set -eu
 export DEBIAN_FRONTEND=noninteractive
+# 20-homebrew now finds the brew that install-deps bootstraps, so brew bundle
+# would install ALL base packages here. Skip that heavy step — this check
+# validates render + script execution + the PATH preamble, not package installs.
+export DOTFILES_SKIP_BREW_BUNDLE=1
 apt-get update -qq >/dev/null 2>&1
 apt-get install -y -qq curl git zsh >/dev/null 2>&1
 

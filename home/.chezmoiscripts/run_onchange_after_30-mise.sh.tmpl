@@ -12,6 +12,10 @@
 # mise config hash: {{ include "dot_config/mise/config.toml.tmpl" | sha256sum }}
 set -euo pipefail
 
+# First apply: install-deps installed mise (via brew or ~/.local/bin) in a
+# separate process whose PATH didn't reach here. Put it back on PATH.
+{{ include ".chezmoitemplates/path-bootstrap.sh" -}}
+
 command -v mise >/dev/null 2>&1 || { echo "mise not found — skipping install"; exit 0; }
 
 echo "Installing mise-managed runtimes + globals…"

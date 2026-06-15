@@ -7,7 +7,19 @@
 # brew bundle is idempotent: already-installed packages are skipped.
 set -euo pipefail
 
+# First apply: install-deps installed brew in a separate process whose PATH
+# didn't reach here. Re-source brew's shellenv so the base bundle runs now.
+{{ include ".chezmoitemplates/path-bootstrap.sh" -}}
+
 command -v brew >/dev/null 2>&1 || { echo "brew not found — skipping bundle"; exit 0; }
+
+# Escape hatch: skip the (slow) package install while everything else still
+# applies. Used by scripts/local-validate.sh to keep validation fast, and handy
+# for `DOTFILES_SKIP_BREW_BUNDLE=1 chezmoi apply` when only config changed.
+if [ "${DOTFILES_SKIP_BREW_BUNDLE:-0}" = "1" ]; then
+  echo "DOTFILES_SKIP_BREW_BUNDLE=1 — skipping brew bundle."
+  exit 0
+fi
 
 # ── minimal base (every initialized tier, incl client-restricted) ────────────
 echo "Installing Homebrew base…"
