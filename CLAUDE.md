@@ -116,6 +116,23 @@ an explicit opt-in flag defaulting false.
 
 ## Patterns
 
+**macOS defaults — `run_onchange_`, not `run_once_`.**
+
+macOS settings live in `run_onchange_after_70-macos-defaults.sh.tmpl`. Use
+`run_onchange_` (not `run_once_`) because `defaults write` is already idempotent
+(no-op when the value matches), so re-runs are always safe. Adding a new setting
+to the script re-hashes it and automatically re-runs on all machines.
+
+- To add a new setting: append a `defaults write` call with an inline comment.
+- To remove a setting you previously added: `defaults delete <domain> <key>` on
+  each machine manually — the script only writes, never deletes.
+- Terminal needs **Full Disk Access** (System Settings → Privacy & Security →
+  Full Disk Access) or Sonoma 14+ silently ignores writes.
+- Always `killall Dock` / `killall Finder` at the end so changes take effect.
+- Some keys (trackpad, keyboard, accessibility) require logout to apply.
+- Key names can change silently on major macOS upgrades — verify with
+  `defaults read <domain> <key>` after each upgrade.
+
 **`run_once_` with `--get` guards — "set once, never overwrite".**
 
 Use this for config files (like `~/.gitconfig`) that should bootstrap on a new
