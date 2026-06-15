@@ -45,3 +45,14 @@
 .config/temporalio
 .config/github-copilot
 .config/gh-copilot
+
+# ── Personal/company-tier app configs — kept off minimal client boxes. They are
+#    inert without their tool installed, but client-restricted stays lean. These
+#    deploy on personal-* and company tiers; here we ignore them ONLY on client.
+{{- if eq .trust_level "client-restricted" }}
+.config/zellij
+.config/zed
+.config/ccstatusline
+.config/gh-dash
+.config/gh/config.yml
+{{- end }}
