@@ -47,6 +47,12 @@ base_file="$(mktemp)"
 cat > "${base_file}" <<'BREWFILE'
 {{ include ".chezmoitemplates/Brewfile.base" -}}
 BREWFILE
+{{- if eq .chezmoi.os "darwin" }}
+# bash-completion conflicts with util-linux on linuxbrew; macOS-only.
+cat >> "${base_file}" <<'BREWFILE_MACOS'
+brew "bash-completion"
+BREWFILE_MACOS
+{{- end }}
 bundle_and_verify "base" "${base_file}" 1
 {{- if .features.homebrew_full }}
 
