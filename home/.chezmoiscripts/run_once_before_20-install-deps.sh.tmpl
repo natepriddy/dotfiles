@@ -8,7 +8,7 @@
 # Every install is guarded by `command -v` so re-runs / partial installs no-op.
 # On client-restricted, Homebrew still bootstraps (for the minimal Brewfile.base),
 # but its failure is non-fatal — apply proceeds so fonts, dotfiles, and the
-# command-v-guarded shell still land. The mise step is skipped on client-restricted.
+# command-v-guarded shell still land. mise installs on all tiers.
 set -euo pipefail
 
 retry() {
@@ -74,7 +74,6 @@ else
 fi
 {{ end -}}
 
-{{ if ne .trust_level "client-restricted" -}}
 # ── mise (runtime version manager) ───────────────────────────────────
 # Installs the binary only. `mise install` (pulling node/python/go/java and the
 # npm: globals from ~/.config/mise/config.toml) runs in the after-script once
@@ -89,6 +88,5 @@ if ! command -v mise >/dev/null 2>&1; then
 else
   echo "mise already installed — skipping."
 fi
-{{ end -}}
 
 echo "Base toolchain bootstrap complete (trust: {{ .trust_level }})."

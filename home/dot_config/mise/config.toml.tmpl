@@ -1,7 +1,6 @@
 {{/* ~/.config/mise/config.toml — managed by chezmoi (trust: {{ .trust_level }}). */}}
 {{/* Global runtime baseline, latest-by-default. Per-project versions live in each */}}
 {{/* repo's .mise.toml / .tool-versions and OVERRIDE these. */}}
-{{- if ne .trust_level "client-restricted" }}
 [tools]
 node   = "lts"      # baseline; per-project .mise.toml overrides. Also backs the npm: globals.
 python = "latest"
@@ -10,9 +9,11 @@ java   = "latest"   # version-managed via mise, not a brew pin
 
 # Global npm CLIs (need the node above). Per-project tools (husky, playwright,
 # eas-cli) stay out of here — declare those per repo.
+"npm:agent-browser"      = "latest"
+"npm:pnpm"               = "latest"
+{{- if ne .trust_level "client-restricted" }}
+# Cloud-calling AI tools — not on client machines.
 "npm:@anthropic-ai/sdk"  = "latest"
 "npm:@google/gemini-cli" = "latest"
-"npm:agent-browser"      = "latest"
 "npm:ccstatusline"       = "latest"
-"npm:pnpm"               = "latest"
 {{- end }}

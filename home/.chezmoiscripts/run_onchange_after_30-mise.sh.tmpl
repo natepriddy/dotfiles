@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-{{- if ne .trust_level "client-restricted" }}
 # Runs AFTER apply, and re-runs whenever this rendered content changes
 # (run_onchange_after_). By the time this fires, ~/.config/mise/config.toml has
 # been written by chezmoi, so `mise install` can pull the runtimes + npm globals
@@ -35,4 +34,3 @@ else
   log_fail "${_SCRIPT}" "mise install failed"
   exit 1
 fi
-{{- end }}
