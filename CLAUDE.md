@@ -13,6 +13,8 @@ globally. Different job, different file.
 
 - No secrets, tokens, keys, emails, private paths in source. gitleaks + trufflehog
   are hard CI gates on full history. A leaked credential is permanent.
+  Run `gitleaks protect --staged` before pushing to catch leaks at stage time, not
+  after — CI scans history, but the staged scan is the guard for the `add -A` risk.
 - **Never `git add -A` or `chezmoi add -A`.** The `.chezmoiignore` guards
   (`gh/hosts.yml`, `context7`, `temporalio`, copilot dirs) only protect against
   targeted re-add. Sweeps can stage live creds from `$HOME`. Always stage explicit

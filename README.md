@@ -108,9 +108,9 @@ work.
 
 | Tier | Homebrew | mise + runtimes | Secrets | SSH keys | Work git identity | Use for |
 |------|:--------:|:---------------:|:-------:|:--------:|:-----------------:|---------|
-| `personal-primary`   | ✓ | ✓ | ✓ | ✓ | – | My main daily-driver machines |
-| `personal-secondary` | ✓ | ✓ | ✓ | – | – | Secondary / spare personal machines |
-| `company`            | ✓ | ✓ | ✓ | – | ✓ | Employer-issued machines |
+| `personal-primary`   | ✓ | ✓ | v2 | v2 | – | My main daily-driver machines |
+| `personal-secondary` | ✓ | ✓ | v2 | – | – | Secondary / spare personal machines |
+| `company`            | ✓ | ✓ | v2 | – | ✓ | Employer-issued machines |
 | `client-restricted`  | base | – | – | – | ✓ | Locked-down client environments (**default**) |
 
 - **Homebrew** — installs Homebrew (macOS / Linuxbrew) and runs `brew bundle`.
@@ -121,8 +121,10 @@ work.
 - **mise + runtimes** — installs [mise](https://mise.jdx.dev) plus the node /
   python / go / java baseline and global npm CLIs from
   `~/.config/mise/config.toml`.
-- **Secrets** — enables secret-backed templates (externalized; see below).
-- **SSH keys** — materializes SSH key config.
+- **Secrets** *(v2 — not yet wired)* — flag is reserved; secret-backed templates
+  will resolve through an encrypted provider (age / 1Password). No secrets deploy today.
+- **SSH keys** *(v2 — not yet wired)* — flag is reserved; SSH config and key
+  material will land with the secrets backend.
 - **Work git identity** — uses the work email / signing identity for git.
 
 `client-restricted` is the default precisely because it's the safe one: only the
@@ -149,15 +151,22 @@ chezmoi runs scripts in a defined order around the file apply:
 ## Daily workflow
 
 ```sh
-chezmoi update          # pull latest from the repo + re-apply
-chezmoi edit <file>     # edit the SOURCE of a managed file, then apply
-chezmoi re-add          # pull live edits in $HOME back into the source tree
 chezmoi diff            # preview what apply would change
 chezmoi apply           # apply pending changes
+chezmoi edit <file>     # edit the SOURCE of a managed file, then apply
+chezmoi re-add          # pull live edits in $HOME back into the source tree
+chezmoi update          # pull latest from the repo + re-apply
+chezmoi upgrade         # upgrade the chezmoi binary itself
 ```
 
 Edit the source, not the live file, when you can (`chezmoi edit`). When you've
 tweaked something in place and want to keep it, `chezmoi re-add` pulls it back.
+
+> **⚠️ `chezmoi update` and runtime drift:** `~/.claude/settings.json` and
+> `~/.claude/CLAUDE.md` carry live runtime state (enabled plugins, model, memory
+> config) that Claude Code edits in place. A bare `chezmoi update` will silently
+> revert that drift. Use the `chezmoi-safe-apply` skill (`/chezmoi-safe-apply`)
+> to preview the diff and apply selectively before pulling new changes.
 
 ## Neovim plugin lockfile
 

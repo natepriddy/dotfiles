@@ -1,0 +1,45 @@
+# Global gitignore — managed by chezmoi, applies to every repo on this machine.
+# Keep this minimal: OS junk, editor state, credentials. Project-specific ignores
+# belong in each repo's own .gitignore.
+
+# ── macOS ──────────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+
+# ── Windows ────────────────────────────────────────────────────────────────
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ── Editor / IDE state ─────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.settings/
+*.iml
+
+# ── Credentials / secrets — never commit these ─────────────────────────────
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+*.p12
+*.pfx
+
+# ── Runtime / build artefacts ──────────────────────────────────────────────
+*.log
+*.pid
+.cache/
+__pycache__/
+*.pyc
+node_modules/
