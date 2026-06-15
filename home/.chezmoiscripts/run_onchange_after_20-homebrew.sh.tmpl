@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 {{- if .features.homebrew }}
 # Re-runs whenever this rendered content changes (run_onchange_).
-# The {{ `{{ include }}` }} below embeds Brewfile.base verbatim into the rendered
-# script, so editing the base changes this script's hash and the bundle re-fires
-# — no separate hash line needed.
+# The {{ `{{ include }}` }} directives below embed Brewfile.base + the shared PATH
+# snippet verbatim into the rendered script, so editing either changes this
+# script's hash and the bundle re-fires — no separate hash line needed.
 # brew bundle is idempotent: already-installed packages are skipped.
 set -euo pipefail
 
@@ -21,16 +21,37 @@ if [ "${DOTFILES_SKIP_BREW_BUNDLE:-0}" = "1" ]; then
   exit 0
 fi
 
-# ── minimal base (every initialized tier, incl client-restricted) ────────────
-echo "Installing Homebrew base…"
-brew bundle --file=/dev/stdin <<'BREWFILE'
+# brew bundle SILENTLY SKIPS a formula/cask with no bottle for this platform and
+# still exits 0. So we install from a temp Brewfile, then `brew bundle check` it
+# to catch anything that did not actually land. Base misses are critical (they
+# are the client-safe guarantee); standard-tail misses are best-effort.
+base_file=""; tail_file=""
+trap 'rm -f "${base_file}" "${tail_file}"' EXIT
+missing_critical=0
+missing_optional=0
+
+bundle_and_verify() {
+  local label="$1" file="$2" critical="$3" out
+  echo "Installing Homebrew ${label}…"
+  brew bundle --file="${file}"
+  if out="$(brew bundle check --file="${file}" --verbose 2>&1)"; then
+    echo "  ${label}: all entries installed ✓"
+  else
+    echo "⚠ ${label}: the following are NOT installed (likely no bottle for this platform):" >&2
+    printf '%s\n' "${out}" | sed 's/^/    /' >&2
+    if [ "${critical}" = "1" ]; then missing_critical=1; else missing_optional=1; fi
+  fi
+}
+
+base_file="$(mktemp)"
+cat > "${base_file}" <<'BREWFILE'
 {{ include ".chezmoitemplates/Brewfile.base" -}}
 BREWFILE
+bundle_and_verify "base" "${base_file}" 1
 {{- if .features.homebrew_full }}
 
-# ── standard tail (personal / company tiers) ─────────────────────────────────
-echo "Installing Homebrew standard tail…"
-brew bundle --file=/dev/stdin <<'BREWFILE'
+tail_file="$(mktemp)"
+cat > "${tail_file}" <<'BREWFILE'
 # taps
 tap "go-task/tap"
 tap "derailed/k9s"
@@ -93,7 +114,18 @@ cask "eclipse-ide"
 {{-   end }}
 {{- end }}
 BREWFILE
+bundle_and_verify "standard tail" "${tail_file}" 0
 {{- end }}
+
+if [ "${missing_optional}" = "1" ]; then
+  echo "⚠ Some standard-tail packages are missing (no bottle here) — best-effort, continuing." >&2
+fi
+if [ "${missing_critical}" = "1" ]; then
+  echo "✗ Minimal base is incomplete — the client-safe guarantee is not met on this machine." >&2
+{{- if ne .trust_level "client-restricted" }}
+  exit 1
+{{- end }}
+fi
 
 echo "brew bundle complete."
 {{- end }}
