@@ -16,10 +16,23 @@
 #   Wrap it in a new run_once_ script with a different filename — the name
 #   change forces a fresh run. Use the same guard pattern there too.
 set -euo pipefail
+{{ include ".chezmoitemplates/apply-log.sh" }}
+_SCRIPT="gitconfig"
+_FAILED=0
 
-# gc <key> <value> — set only if not already present
+# gc <key> <value> — set only if not already present; logs outcome
 gc() {
-  git config --global --get "$1" >/dev/null 2>&1 || git config --global "$1" "$2"
+  local key="$1" val="$2"
+  if git config --global --get "${key}" >/dev/null 2>&1; then
+    return 0  # already set — guard skips, no log needed
+  fi
+  if git config --global "${key}" "${val}"; then
+    log_pass "${_SCRIPT}" "${key} set"
+  else
+    echo "  ✗ failed to set ${key}" >&2
+    log_fail "${_SCRIPT}" "failed to set ${key}"
+    _FAILED=1
+  fi
 }
 
 gc user.name  {{ .git.name  | quote }}
@@ -34,4 +47,10 @@ gc gpg.format            ssh
 gc user.signingKey "{{ .chezmoi.homeDir }}/.ssh/id_ed25519.pub"
 {{- end }}
 
-echo "git global config initialized."
+if [[ "${_FAILED}" -eq 0 ]]; then
+  echo "git global config initialized."
+  log_pass "${_SCRIPT}" "all keys set"
+else
+  echo "git config: some keys failed — see above" >&2
+  exit 1
+fi

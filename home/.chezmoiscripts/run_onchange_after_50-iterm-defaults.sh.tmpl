@@ -4,16 +4,25 @@
 # run_onchange_ fires when this file's rendered content changes.
 {{- if eq .chezmoi.os "darwin" }}
 set -euo pipefail
+{{ include ".chezmoitemplates/apply-log.sh" }}
+_SCRIPT="iterm-defaults"
 
 PROFILE_GUID="A1B2C3D4-E5F6-7890-ABCD-EF1234567890"
 
 if ! [ -d "/Applications/iTerm.app" ]; then
   echo "iTerm2 not found — skipping default profile setup."
+  log_warn "${_SCRIPT}" "iTerm2 not installed — profile not set"
   exit 0
 fi
 
-defaults write com.googlecode.iterm2 "Default Bookmark Guid" -string "${PROFILE_GUID}"
-echo "iTerm2 default profile set to natepriddy (${PROFILE_GUID})."
+if defaults write com.googlecode.iterm2 "Default Bookmark Guid" -string "${PROFILE_GUID}"; then
+  echo "iTerm2 default profile set to natepriddy (${PROFILE_GUID})."
+  log_pass "${_SCRIPT}" "default profile set"
+else
+  echo "iTerm2 defaults write failed" >&2
+  log_fail "${_SCRIPT}" "defaults write failed"
+  exit 1
+fi
 {{- else }}
 echo "Not macOS — skipping iTerm2 defaults."
 {{- end }}
