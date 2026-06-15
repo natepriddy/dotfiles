@@ -49,3 +49,6 @@ brew "tree-sitter"
 brew "zellij"
 brew "tmux"
 brew "herdr"
+
+# ── terminal emulator ────────────────────────────────────────────
+cask "ghostty"
