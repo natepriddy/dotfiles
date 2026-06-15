@@ -94,6 +94,9 @@ rationale on prompt-flag semantics and no-op brew/mise shims.
 Always test against **`client-restricted` AND one full tier** — they take different
 template branches.
 
+For chezmoi, brew, or mise documentation: use the `find-docs` skill (`/find-docs`),
+which wraps context7 and handles library resolution automatically.
+
 ## Trust tiers
 
 | Tier | Features |
