@@ -13,6 +13,10 @@
 {{- $brewFull := ne $trust "client-restricted" -}}
 {{- $work := or (eq $trust "company") (eq $trust "client-restricted") -}}
 
+{{- /* experimental opt-in Obsidian/Claude-memory bundle — independent of trust level */ -}}
+{{- $obsidian := promptBoolOnce . "obsidian_enabled" "Enable experimental Obsidian/Claude-memory bundle" false -}}
+{{- $vault := promptStringOnce . "obsidian_vault" "Obsidian vault absolute path (blank if disabled)" "" -}}
+
 [data]
     trust_level = {{ $trust | quote }}
 
@@ -22,3 +26,7 @@
     homebrew      = {{ $brew }}
     homebrew_full = {{ $brewFull }}
     work_git      = {{ $work }}
+
+[data.obsidian]
+    enabled = {{ $obsidian }}
+    vault   = {{ $vault | quote }}

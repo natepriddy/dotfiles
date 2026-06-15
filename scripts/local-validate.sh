@@ -79,6 +79,7 @@ KEY_TEMPLATES=(
   ".chezmoiscripts/run_onchange_after_20-homebrew.sh.tmpl"
   ".chezmoiscripts/run_onchange_after_40-fonts.sh.tmpl"
   "dot_claude/settings.json.tmpl"
+  "dot_claude/CLAUDE.md.tmpl"
 )
 
 require_chezmoi() {
