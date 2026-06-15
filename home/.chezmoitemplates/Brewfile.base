@@ -1,0 +1,45 @@
+# Minimal, client-safe Homebrew base.
+#
+# Plain Brewfile — NO template directives — so it lints cleanly, gives tidy
+# diffs, and `brew bundle check --file=home/.chezmoitemplates/Brewfile.base`
+# works on it directly.
+#
+# Installed on EVERY initialized tier (including client-restricted) where brew
+# exists. Kept deliberately small but genuinely usable: a comfortable shell plus
+# a self-contained editing setup, no daemons / cloud / media.
+#
+# Heavier standard tooling (docker, kubernetes, cloud CLIs, media, etc.) lives
+# in the homebrew_full tail of run_onchange_after_20-homebrew.sh.tmpl — NOT here.
+
+# ── search / file / nav ──────────────────────────────────────────
+brew "ripgrep"
+brew "fd"
+brew "bat"
+brew "eza"
+brew "fzf"
+brew "tree"
+brew "zoxide"
+
+# ── data wrangling ───────────────────────────────────────────────
+brew "jq"
+brew "yq"
+
+# ── shell comfort ────────────────────────────────────────────────
+brew "starship"
+brew "bash-completion"
+
+# ── system ───────────────────────────────────────────────────────
+brew "htop"
+
+# ── git / box management ─────────────────────────────────────────
+brew "gh"
+brew "lazygit"
+brew "chezmoi"
+
+# ── editor (self-contained on a bare box) ────────────────────────
+brew "neovim"
+brew "tree-sitter"
+
+# ── multiplexers ─────────────────────────────────────────────────
+brew "zellij"
+brew "tmux"

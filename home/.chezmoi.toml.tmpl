@@ -7,14 +7,18 @@
 {{- /* feature flags derived from trust level */ -}}
 {{- $secrets := or (eq $trust "personal-primary") (eq $trust "personal-secondary") (eq $trust "company") -}}
 {{- $ssh := eq $trust "personal-primary" -}}
-{{- $brew := ne $trust "client-restricted" -}}
+{{- /* every initialized machine gets the minimal, client-safe base… */ -}}
+{{- $brew := true -}}
+{{- /* …but only non-client tiers get the heavy standard/company tail. */ -}}
+{{- $brewFull := ne $trust "client-restricted" -}}
 {{- $work := or (eq $trust "company") (eq $trust "client-restricted") -}}
 
 [data]
     trust_level = {{ $trust | quote }}
 
 [data.features]
-    secrets  = {{ $secrets }}
-    ssh_keys = {{ $ssh }}
-    homebrew = {{ $brew }}
-    work_git = {{ $work }}
+    secrets       = {{ $secrets }}
+    ssh_keys      = {{ $ssh }}
+    homebrew      = {{ $brew }}
+    homebrew_full = {{ $brewFull }}
+    work_git      = {{ $work }}

@@ -10,10 +10,11 @@ trust_level  = "client-restricted"   # safest default; init raises it per machin
 machine_name = ""
 
 [features]
-secrets  = false
-ssh_keys = false
-homebrew = false
-work_git = false
+secrets       = false
+ssh_keys      = false
+homebrew      = false   # minimal base; init turns this on for every chosen tier
+homebrew_full = false   # standard/heavy tail; init turns this on for non-client tiers
+work_git      = false
 
 [git]
 personal_name  = "Nate Priddy"
