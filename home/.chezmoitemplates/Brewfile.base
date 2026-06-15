@@ -52,3 +52,6 @@ brew "herdr"
 
 # ── terminal emulator ────────────────────────────────────────────
 cask "ghostty"
+
+# ── editor ───────────────────────────────────────────────────────
+cask "visual-studio-code"
