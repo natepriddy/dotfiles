@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Sets the natepriddy Dynamic Profile as iTerm2's default profile.
+# Only runs on macOS. The GUID must match natepriddy.json exactly.
+# run_onchange_ fires when this file's rendered content changes.
+{{- if eq .chezmoi.os "darwin" }}
+set -euo pipefail
+
+PROFILE_GUID="A1B2C3D4-E5F6-7890-ABCD-EF1234567890"
+
+if ! [ -d "/Applications/iTerm.app" ]; then
+  echo "iTerm2 not found — skipping default profile setup."
+  exit 0
+fi
+
+defaults write com.googlecode.iterm2 "Default Bookmark Guid" -string "${PROFILE_GUID}"
+echo "iTerm2 default profile set to natepriddy (${PROFILE_GUID})."
+{{- else }}
+echo "Not macOS — skipping iTerm2 defaults."
+{{- end }}
