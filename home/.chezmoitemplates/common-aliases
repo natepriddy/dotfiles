@@ -1,0 +1,7 @@
+{{- /* Shared aliases — included by dot_zshrc.tmpl via {{ template "common-aliases" . }} */ -}}
+alias ..='cd ..'
+alias ...='cd ../..'
+alias g='git'
+alias gs='git status'
+alias gl='git log --oneline --graph --decorate -20'
+command -v lazygit >/dev/null && alias lg='lazygit'

@@ -1,0 +1,431 @@
+name: CI
+
+# Release gate for a PUBLIC chezmoi dotfiles repo.
+#
+# Hard rules baked into this workflow:
+#   * It NEVER commits, pushes, or otherwise mutates the repo or the runner's
+#     real $HOME. Every `chezmoi apply` targets a throwaway temp directory via
+#     --destination / --config / --cache / --persistent-state.
+#   * gitleaks is a non-negotiable hard-fail gate on the full history / PR diff.
+#   * All third-party actions are pinned to reputable major-version tags.
+#
+# Repo facts this workflow depends on:
+#   * .chezmoiroot = home   -> chezmoi source dir is ./home
+#   * Init prompt is home/.chezmoi.toml.tmpl using:
+#         promptChoiceOnce . "trust_level" "Machine trust level" $choices "client-restricted"
+#     promptChoice flags are keyed by the PROMPT TEXT, not the variable name, so
+#     the non-interactive flag is:
+#         --promptChoice "Machine trust level=<trust_level>"
+#     (Verified against chezmoi v2.70.3: keying by "trust_level" silently falls
+#      back to the default "client-restricted".)
+
+on:
+  push:
+    branches: [main, v1-chezmoi]
+  pull_request:
+    branches: [main, v1-chezmoi]
+
+permissions:
+  contents: read
+
+# Keep CI cheap: cancel superseded runs on the same ref.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # The .chezmoiroot value. The chezmoi source directory is ./home.
+  CHEZMOI_SOURCE: home
+
+jobs:
+  # ───────────────────────────────────────────────────────────────────────────
+  # 1. lint-render
+  #    - shellcheck the .sh.tmpl scripts (rendered first; templates aren't valid
+  #      shell until the Go-template directives are stripped).
+  #    - render every key template across a matrix of trust levels and assert the
+  #      template engine exits 0 (no template errors) for each.
+  # ───────────────────────────────────────────────────────────────────────────
+  lint-render:
+    name: lint-render (${{ matrix.trust_level }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        trust_level: [personal-primary, company, client-restricted]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          shellcheck --version
+
+      - name: Install chezmoi
+        run: |
+          sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Show chezmoi version
+        run: chezmoi --version
+
+      # IMPORTANT: target templates (dot_zshrc.tmpl, the .sh.tmpl scripts, …)
+      # reference .trust_level and .features.homebrew. Those values are produced
+      # by the init config template (home/.chezmoi.toml.tmpl), NOT by --init on
+      # the target template itself — `execute-template --init <some_target>` does
+      # NOT populate .features, it only runs the config template's own prompts.
+      #
+      # So we do it in two stages, single-sourcing the feature-derivation logic
+      # from the repo's own init template:
+      #   1. Render home/.chezmoi.toml.tmpl with --promptChoice -> a real config
+      #      file ($cfg) containing [data] trust_level + [data.features].
+      #   2. Render every target template with `-c $cfg` (NO --init). chezmoi
+      #      promotes [data].* to top-level template vars, so .trust_level and
+      #      .features.* resolve exactly as they would on a real machine.
+      - name: Build chezmoi config for this trust level
+        id: cfg
+        run: |
+          set -euo pipefail
+          tl="${{ matrix.trust_level }}"
+          cfgdir="$(mktemp -d)"
+          cfg="$cfgdir/chezmoi.toml"
+          chezmoi execute-template \
+            --init \
+            --promptChoice "Machine trust level=$tl" \
+            < "${CHEZMOI_SOURCE}/.chezmoi.toml.tmpl" > "$cfg"
+          echo "----- rendered config ($tl) -----"
+          cat "$cfg"
+          echo "CM_CFG=$cfg" >> "$GITHUB_ENV"
+
+      - name: Render + shellcheck every .sh.tmpl script
+        run: |
+          set -euo pipefail
+          src="${CHEZMOI_SOURCE}"
+          tl="${{ matrix.trust_level }}"
+
+          mapfile -t scripts < <(find "$src/.chezmoiscripts" -name '*.sh.tmpl' -type f 2>/dev/null || true)
+          if [ "${#scripts[@]}" -eq 0 ]; then
+            echo "No .sh.tmpl scripts found under $src/.chezmoiscripts — nothing to shellcheck."
+            exit 0
+          fi
+
+          rc=0
+          for tmpl in "${scripts[@]}"; do
+            echo "::group::shellcheck $tmpl (trust_level=$tl)"
+            rendered="$(mktemp --suffix=.sh)"
+            # Render against the real config (NO --init) so .features resolves.
+            # -S so `{{ template "common-aliases" . }}` (.chezmoitemplates/) resolves.
+            if ! chezmoi execute-template -S "$PWD/$src" -c "$CM_CFG" --no-tty < "$tmpl" > "$rendered"; then
+              echo "::error file=$tmpl::template render failed for trust_level=$tl"
+              rc=1
+              echo "::endgroup::"
+              continue
+            fi
+            # A gated-off script renders to just a shebang — still valid bash.
+            # Only error-severity findings fail the gate; style/info are advisory.
+            if ! shellcheck --severity=error --shell=bash "$rendered"; then
+              echo "::error file=$tmpl::shellcheck found error-severity issues"
+              rc=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "$rc"
+
+      - name: Render every key template (assert exit 0 / no template errors)
+        run: |
+          set -euo pipefail
+          src="${CHEZMOI_SOURCE}"
+          tl="${{ matrix.trust_level }}"
+
+          # Explicit key templates, referenced defensively: a missing file is a
+          # skip, not a failure, so the matrix survives templates that don't
+          # exist yet in this phase of the repo.
+          templates=(
+            "$src/dot_zshrc.tmpl"
+            "$src/dot_config/mise/config.toml.tmpl"
+            "$src/.chezmoiscripts/run_onchange_after_20-homebrew.sh.tmpl"
+            "$src/.chezmoiscripts/run_once_before_20-install-deps.sh.tmpl"
+          )
+
+          # Sweep in every other *.tmpl under the source tree, minus the init
+          # config template (rendered separately above — it emits the config
+          # TOML, not a target file).
+          mapfile -t discovered < <(
+            find "$src" -name '*.tmpl' -type f ! -name '.chezmoi.toml.tmpl' | sort -u
+          )
+
+          declare -A seen=()
+          to_render=()
+          for t in "${templates[@]}" "${discovered[@]}"; do
+            [ -f "$t" ] || continue
+            [ -n "${seen[$t]:-}" ] && continue
+            seen[$t]=1
+            to_render+=("$t")
+          done
+
+          rc=0
+          for tmpl in "${to_render[@]}"; do
+            echo "::group::execute-template $tmpl (trust_level=$tl)"
+            # NO --init: render against the config built above so .trust_level /
+            # .features.* resolve. A template error is a non-zero exit -> fail.
+            if chezmoi execute-template -S "$PWD/$src" -c "$CM_CFG" --no-tty < "$tmpl" > /dev/null; then
+              echo "OK: $tmpl"
+            else
+              echo "::error file=$tmpl::execute-template failed for trust_level=$tl"
+              rc=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "$rc"
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 2. apply-matrix
+  #    Run `chezmoi init --apply` NON-INTERACTIVELY into a throwaway destination
+  #    on both Linux and macOS, asserting it converges. Nothing touches the real
+  #    $HOME: source, destination, config, cache, and persistent-state are all
+  #    redirected. Brew/mise installs are gated behind features/`command -v` so
+  #    they no-op on a clean runner — the goal is template+apply correctness.
+  # ───────────────────────────────────────────────────────────────────────────
+  apply-matrix:
+    name: apply (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install chezmoi
+        shell: bash
+        run: |
+          sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Show chezmoi version
+        shell: bash
+        run: chezmoi --version
+
+      # The repo's run_once_before / run_onchange_after scripts shell out to the
+      # real Homebrew + mise installers and `brew bundle` 46 packages whenever
+      # .features.homebrew is true (which it is for personal-primary). We want to
+      # exercise the personal-primary template + script path WITHOUT mutating the
+      # runner, so we shadow `brew` and `mise` with no-op shims placed first on
+      # PATH. Every `command -v brew` / `command -v mise` guard in the scripts
+      # then resolves to the shim and short-circuits cleanly. This keeps apply
+      # deterministic (and therefore idempotent) regardless of what each runner
+      # image happens to ship.
+      - name: Install no-op brew/mise shims (prevent host mutation)
+        shell: bash
+        run: |
+          set -euo pipefail
+          shimdir="$HOME/.ci-shims"
+          mkdir -p "$shimdir"
+          for tool in brew mise; do
+            cat > "$shimdir/$tool" <<'EOF'
+          #!/usr/bin/env bash
+          # CI no-op shim: swallow every invocation so install/bundle steps no-op.
+          # `brew --prefix` / `brew shellenv` still need to return something sane.
+          case "${1:-}" in
+            --prefix) echo "/opt/ci-noop" ;;
+            shellenv) : ;;
+            *) : ;;
+          esac
+          exit 0
+          EOF
+            chmod +x "$shimdir/$tool"
+          done
+          # Front of PATH so the shims win over any preinstalled brew/mise.
+          echo "$shimdir" >> "$GITHUB_PATH"
+
+      - name: chezmoi init --apply into a throwaway destination
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Fully isolated, disposable chezmoi state. None of this is the real HOME.
+          work="$(mktemp -d)"
+          dest="$work/dest"
+          cfg="$work/config/chezmoi.toml"
+          cache="$work/cache"
+          state="$work/state/chezmoistate.boltdb"
+          mkdir -p "$dest" "$(dirname "$cfg")" "$cache" "$(dirname "$state")"
+
+          echo "Isolated destination: $dest"
+
+          # NOTE: no --verbose here. With --verbose, chezmoi wraps config creation
+          # in its git-diff system, which panics when --config lives outside
+          # --destination ("config: not in dest"). The idempotency job (no
+          # --verbose) is unaffected; the find/test below give us the visibility.
+          chezmoi init --apply \
+            --source "$PWD/${CHEZMOI_SOURCE}" \
+            --destination "$dest" \
+            --config "$cfg" \
+            --cache "$cache" \
+            --persistent-state "$state" \
+            --promptChoice "Machine trust level=personal-primary" \
+            --no-tty
+
+          echo "=== Rendered destination tree ==="
+          find "$dest" -type f | sed "s|$dest|<DEST>|" | sort
+
+          echo "=== Sanity: .zshrc was rendered ==="
+          test -f "$dest/.zshrc"
+          head -n 5 "$dest/.zshrc"
+
+          # Expose paths to later steps in this job.
+          {
+            echo "CM_WORK=$work"
+            echo "CM_DEST=$dest"
+            echo "CM_CONFIG=$cfg"
+            echo "CM_CACHE=$cache"
+            echo "CM_STATE=$state"
+          } >> "$GITHUB_ENV"
+
+      - name: Assert convergence (chezmoi verify == clean)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # `verify` exits 0 iff the destination already matches the target state.
+          chezmoi verify \
+            --source "$PWD/${CHEZMOI_SOURCE}" \
+            --destination "$CM_DEST" \
+            --config "$CM_CONFIG" \
+            --cache "$CM_CACHE" \
+            --persistent-state "$CM_STATE" \
+            --no-tty
+          echo "chezmoi verify clean — destination converged."
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 3. gitleaks
+  #    Non-negotiable public-repo gate. Scans the full git history (push) or the
+  #    PR diff. ANY finding hard-fails the job. No license / token required for
+  #    the open-source gitleaks binary on a public repo.
+  # ───────────────────────────────────────────────────────────────────────────
+  gitleaks:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          # gitleaks needs full history to scan every commit, not just HEAD.
+          fetch-depth: 0
+
+      - name: Install gitleaks
+        run: |
+          set -euo pipefail
+          version="8.21.2"
+          url="https://github.com/gitleaks/gitleaks/releases/download/v${version}/gitleaks_${version}_linux_x64.tar.gz"
+          curl -fsSL "$url" -o /tmp/gitleaks.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          sudo install -m 0755 /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+
+      - name: Scan git history for secrets (hard fail on findings)
+        run: |
+          set -euo pipefail
+          # gitleaks v8.21+ replaced `detect` with subcommands. `git` scans
+          # commit history; the repo path is positional ("."). --log-opts="--all"
+          # forces every ref/commit to be scanned, not just the default branch.
+          # --redact keeps any matched secret out of the logs. --exit-code 1
+          # (the default) makes ANY finding hard-fail this gate.
+          gitleaks git . \
+            --log-opts="--all" \
+            --redact \
+            --verbose \
+            --exit-code 1 \
+            --report-format sarif \
+            --report-path gitleaks.sarif \
+            --no-banner
+
+      - name: Upload gitleaks report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-sarif
+          path: gitleaks.sarif
+          if-no-files-found: ignore
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 4. idempotency
+  #    Apply twice into a throwaway destination and assert the SECOND pass is a
+  #    no-op (chezmoi verify is clean and `chezmoi diff` is empty). Catches
+  #    run_onchange_/run_once_ scripts or templates that re-trigger on every run.
+  # ───────────────────────────────────────────────────────────────────────────
+  idempotency:
+    name: idempotency
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install chezmoi
+        run: |
+          sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      # See apply-matrix for rationale: no-op shims keep the bootstrap scripts
+      # from mutating the runner and make the apply deterministic, which is a
+      # precondition for a meaningful idempotency assertion.
+      - name: Install no-op brew/mise shims (prevent host mutation)
+        run: |
+          set -euo pipefail
+          shimdir="$HOME/.ci-shims"
+          mkdir -p "$shimdir"
+          for tool in brew mise; do
+            cat > "$shimdir/$tool" <<'EOF'
+          #!/usr/bin/env bash
+          case "${1:-}" in
+            --prefix) echo "/opt/ci-noop" ;;
+            shellenv) : ;;
+            *) : ;;
+          esac
+          exit 0
+          EOF
+            chmod +x "$shimdir/$tool"
+          done
+          echo "$shimdir" >> "$GITHUB_PATH"
+
+      - name: Apply twice into a throwaway destination; assert zero second-pass changes
+        run: |
+          set -euo pipefail
+
+          work="$(mktemp -d)"
+          dest="$work/dest"
+          cfg="$work/config/chezmoi.toml"
+          cache="$work/cache"
+          state="$work/state/chezmoistate.boltdb"
+          mkdir -p "$dest" "$(dirname "$cfg")" "$cache" "$(dirname "$state")"
+
+          common=(
+            --source "$PWD/${CHEZMOI_SOURCE}"
+            --destination "$dest"
+            --config "$cfg"
+            --cache "$cache"
+            --persistent-state "$state"
+            --no-tty
+          )
+
+          echo "=== Pass 1: init --apply ==="
+          chezmoi init --apply \
+            "${common[@]}" \
+            --promptChoice "Machine trust level=personal-primary"
+
+          echo "=== Pass 2: apply again (must converge to no-op) ==="
+          chezmoi apply "${common[@]}"
+
+          echo "=== Assert: chezmoi diff is empty on the second pass ==="
+          diff_out="$(chezmoi diff "${common[@]}")"
+          if [ -n "$diff_out" ]; then
+            echo "::error::chezmoi diff is non-empty after a second apply — NOT idempotent:"
+            echo "$diff_out"
+            exit 1
+          fi
+
+          echo "=== Assert: chezmoi verify is clean ==="
+          chezmoi verify "${common[@]}"
+
+          echo "Idempotent: second apply produced no changes."

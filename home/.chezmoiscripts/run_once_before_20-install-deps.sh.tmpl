@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# Runs ONCE per machine, BEFORE chezmoi writes any files (run_once_before_).
+# Installs only the base toolchain needed to bootstrap apply: Homebrew + mise.
+# Runtimes (node/python/go/java) and brew packages are NOT installed here —
+# those are handled by the after-scripts (30-mise, 20-homebrew) once the
+# managed config files (~/.config/mise/config.toml, Brewfile) are in place.
+#
+# Every install is guarded by `command -v` so re-runs / partial installs no-op,
+# and the whole script no-ops cleanly on a client-restricted machine.
+set -euo pipefail
+
+{{ if .features.homebrew -}}
+# ── Homebrew ─────────────────────────────────────────────────────────
+if ! command -v brew >/dev/null 2>&1; then
+  echo "Installing Homebrew…"
+  {{- if eq .chezmoi.os "darwin" }}
+  # macOS: official installer (idempotent — bails if already present).
+  NONINTERACTIVE=1 /bin/bash -c \
+    "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  # Make brew available for the rest of THIS script.
+  if [ -x /opt/homebrew/bin/brew ]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [ -x /usr/local/bin/brew ]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  fi
+  {{- else if eq .chezmoi.os "linux" }}
+  # Linux (non-client only — gated by .features.homebrew): Linuxbrew.
+  NONINTERACTIVE=1 /bin/bash -c \
+    "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+  fi
+  {{- else }}
+  echo "Homebrew not supported on {{ .chezmoi.os }} — skipping."
+  {{- end }}
+else
+  echo "Homebrew already installed — skipping."
+fi
+{{ end -}}
+
+{{ if ne .trust_level "client-restricted" -}}
+# ── mise (runtime version manager) ───────────────────────────────────
+# Installs the binary only. `mise install` (pulling node/python/go/java and the
+# npm: globals from ~/.config/mise/config.toml) runs in the after-script once
+# that config file has been written by apply.
+if ! command -v mise >/dev/null 2>&1; then
+  echo "Installing mise…"
+  if command -v brew >/dev/null 2>&1; then
+    brew install mise
+  else
+    curl -fsSL https://mise.run | sh
+  fi
+else
+  echo "mise already installed — skipping."
+fi
+{{ end -}}
+
+echo "Base toolchain bootstrap complete (trust: {{ .trust_level }})."

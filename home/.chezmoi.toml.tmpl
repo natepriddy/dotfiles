@@ -1,0 +1,20 @@
+{{/* Runs once at `chezmoi init`. Prompts for the machine's trust level, derives  */}}
+{{/* feature flags from it, and writes them to ~/.config/chezmoi/chezmoi.toml —    */}}
+{{/* machine-local, never committed. These OVERRIDE .chezmoidata.toml's defaults.  */}}
+{{- $choices := list "personal-primary" "personal-secondary" "company" "client-restricted" -}}
+{{- $trust := promptChoiceOnce . "trust_level" "Machine trust level" $choices "client-restricted" -}}
+
+{{- /* feature flags derived from trust level */ -}}
+{{- $secrets := or (eq $trust "personal-primary") (eq $trust "personal-secondary") (eq $trust "company") -}}
+{{- $ssh := eq $trust "personal-primary" -}}
+{{- $brew := ne $trust "client-restricted" -}}
+{{- $work := or (eq $trust "company") (eq $trust "client-restricted") -}}
+
+[data]
+    trust_level = {{ $trust | quote }}
+
+[data.features]
+    secrets  = {{ $secrets }}
+    ssh_keys = {{ $ssh }}
+    homebrew = {{ $brew }}
+    work_git = {{ $work }}

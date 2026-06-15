@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# Reconcile installed Claude Code skills with ~/.agents/.skill-lock.json.
+#
+# 1. Remove any locally-installed skill whose name is NOT a key in the lockfile.
+# 2. Re-install each skill in the lockfile from its recorded source, targeting
+#    that specific skill name (not --all) so we don't pull in extras.
+#
+# chezmoi re-runs this script only when its rendered content changes. The
+# include below embeds a hash of the lockfile into the script, so any
+# lockfile edit re-triggers reconciliation.
+#
+# Lockfile hash: {{ include "dot_agents/dot_skill-lock.json" | sha256sum }}
+
+set -euo pipefail
+
+# Skill reconciliation needs network + node and is irrelevant on minimal boxes.
+# Skip on client-restricted, and in CI (which only validates template+apply correctness).
+{{- if eq .trust_level "client-restricted" }}
+echo "client-restricted — skipping skill reconciliation."; exit 0
+{{- end }}
+if [ -n "${CI:-}${GITHUB_ACTIONS:-}" ]; then
+  echo "CI detected — skipping skill reconciliation."; exit 0
+fi
+
+LOCK="$HOME/.agents/.skill-lock.json"
+
+# Missing prerequisites = skip gracefully (don't fail the whole apply); skills get
+# reconciled on a later apply once jq/npx/the lockfile are present.
+if ! command -v jq >/dev/null; then
+  echo "jq missing — skipping skill reconciliation (brew install jq)" >&2; exit 0
+fi
+if ! command -v npx >/dev/null; then
+  echo "npx missing — skipping skill reconciliation (install Node.js >= 18)" >&2; exit 0
+fi
+if [ ! -f "$LOCK" ]; then
+  echo "lockfile missing at $LOCK — skipping skill reconciliation" >&2; exit 0
+fi
+
+desired=$(jq -r '.skills | keys[]' "$LOCK" | sort -u)
+# Use path basename rather than .name — `.name` is the display title
+# ("Agent Development") while the lockfile keys + CLI identifiers are the
+# kebab-case directory names ("agent-development").
+#
+# Filter to `~/.agents/skills/` only. `skills list -g` enumerates both
+# `~/.agents/skills/` and `~/.claude/skills/`; without the filter, custom
+# personal skills tracked by chezmoi under `~/.claude/skills/` (and absent
+# from the lockfile) would be flagged for removal. See dotfiles#2.
+installed=$(npx --yes skills@latest list -g --json 2>/dev/null \
+  | jq -r --arg agents "$HOME/.agents/skills/" '.[] | select(.path | startswith($agents)) | .path | split("/") | last' \
+  | sort -u || true)
+
+to_remove=$(comm -13 <(echo "$desired") <(echo "$installed") | sed '/^$/d')
+if [ -n "$to_remove" ]; then
+  echo "==> removing skills no longer in lockfile:"
+  echo "$to_remove" | sed 's/^/    /'
+  # Pass each name as a separate arg; xargs handles names with spaces (none expected
+  # for kebab-case ids, but defensive).
+  echo "$to_remove" | xargs npx --yes skills@latest remove -g -y 2>&1 | tail -3
+fi
+
+# Build per-source "-s name -s name ..." args so we install exactly the skills
+# listed in the lockfile rather than --all from each source repo.
+failed=""
+jq -r '
+  .skills
+  | to_entries
+  | group_by(.value.source)
+  | .[]
+  | (.[0].value.source) + " " + ([.[] | "-s " + .key] | join(" "))
+' "$LOCK" | while IFS= read -r line; do
+  [ -n "$line" ] || continue
+  src=${line%% *}
+  args=${line#* }
+  echo "==> npx skills add $src $args"
+  # shellcheck disable=SC2086
+  npx --yes skills@latest add "$src" -g -y $args 2>&1 | tail -3 || failed="$failed $src"
+done
+
+if [ -n "$failed" ]; then
+  echo "WARN: failed sources:$failed (will retry on next apply)" >&2
+fi

@@ -1,0 +1,22 @@
+# Committed, public, FAIL-CLOSED defaults for every machine.
+#
+# Real per-machine values are written to ~/.config/chezmoi/chezmoi.toml by
+# .chezmoi.toml.tmpl at `chezmoi init`, and OVERRIDE everything here.
+# A machine that never ran init therefore gets the safest possible profile.
+#
+# NEVER put a secret in this file — it is public.
+
+trust_level  = "client-restricted"   # safest default; init raises it per machine
+machine_name = ""
+
+[features]
+secrets  = false
+ssh_keys = false
+homebrew = false
+work_git = false
+
+[git]
+personal_name  = "Nate Priddy"
+personal_email = ""   # set per-machine via init / local config
+work_email     = ""   # set on company / client machines
+signing_key    = ""

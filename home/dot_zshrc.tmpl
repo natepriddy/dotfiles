@@ -1,0 +1,76 @@
+{{/* ~/.zshrc — managed by chezmoi (trust: {{ .trust_level }}). */}}
+{{/* Edit the source, never the deployed file:  chezmoi edit ~/.zshrc && chezmoi apply */}}
+# ─────────────────────────────────────────────────────────────────────────────
+# Base — every machine, every trust level
+# ─────────────────────────────────────────────────────────────────────────────
+{{- if eq .trust_level "client-restricted" }}
+export EDITOR="${EDITOR:-vi}"      # client box: assume nothing is installed
+{{- else }}
+export EDITOR="${EDITOR:-nvim}"
+{{- end }}
+export VISUAL="$EDITOR"
+
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=50000
+SAVEHIST=50000
+setopt complete_aliases inc_append_history share_history hist_ignore_dups
+
+alias reload-zsh="source ~/.zshrc"
+alias edit-zsh="chezmoi edit ~/.zshrc"
+alias home='cd ~'
+alias nvim-config='nvim $HOME/.config/nvim'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Homebrew — arch-aware, only on tiers that install it
+# ─────────────────────────────────────────────────────────────────────────────
+{{- if .features.homebrew }}
+{{-   if eq .chezmoi.os "darwin" }}
+{{-     if eq .chezmoi.arch "arm64" }}
+[ -x /opt/homebrew/bin/brew ] && eval "$(/opt/homebrew/bin/brew shellenv)"
+{{-     else }}
+[ -x /usr/local/bin/brew ] && eval "$(/usr/local/bin/brew shellenv)"
+{{-     end }}
+{{-   else if eq .chezmoi.os "linux" }}
+[ -x /home/linuxbrew/.linuxbrew/bin/brew ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+{{-   end }}
+{{- end }}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Runtimes (mise) + prompt (starship) — skip silently if absent
+# ─────────────────────────────────────────────────────────────────────────────
+command -v mise     >/dev/null && eval "$(mise activate zsh)"
+command -v starship >/dev/null && eval "$(starship init zsh)"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CLI niceties — each guarded so a minimal box still gets a working shell
+# ─────────────────────────────────────────────────────────────────────────────
+command -v zoxide >/dev/null && { eval "$(zoxide init zsh)"; alias cd="z"; }
+command -v eza    >/dev/null && alias ls="eza --icons=always"
+command -v bat    >/dev/null && export BAT_THEME="tokyonight_night"
+
+if command -v brew >/dev/null; then
+  _brew_prefix="$(brew --prefix)"
+  for _p in zsh-autosuggestions/zsh-autosuggestions.zsh \
+            zsh-syntax-highlighting/zsh-syntax-highlighting.zsh; do
+    [ -f "$_brew_prefix/share/$_p" ] && source "$_brew_prefix/share/$_p"
+  done
+  unset _brew_prefix _p
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Shared aliases
+# ─────────────────────────────────────────────────────────────────────────────
+{{ template "common-aliases" . }}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Personal-only
+# ─────────────────────────────────────────────────────────────────────────────
+{{- if or (eq .trust_level "personal-primary") (eq .trust_level "personal-secondary") }}
+# (personal-machine extras go here)
+{{- end }}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Work-only (company tier) — intentionally empty in v1.
+# Add current project paths/aliases here when needed, e.g.:
+#   {{ "{{" }} if eq .trust_level "company" {{ "}}" }} export WORK_HOME=... {{ "{{" }} end {{ "}}" }}
+# ─────────────────────────────────────────────────────────────────────────────

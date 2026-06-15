@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+{{- if .features.homebrew }}
+# Re-runs whenever this rendered content changes (run_onchange_).
+# brew bundle is idempotent: already-installed packages are skipped.
+set -euo pipefail
+
+command -v brew >/dev/null 2>&1 || { echo "brew not found — skipping bundle"; exit 0; }
+
+brew bundle --file=/dev/stdin <<'BREWFILE'
+# ── taps ─────────────────────────────────────────────────────────
+tap "go-task/tap"
+tap "derailed/k9s"
+
+# ── base brews (all homebrew tiers) ──────────────────────────────
+brew "act"
+brew "awscli"
+brew "azure-cli"
+brew "bash-completion"
+brew "bat"
+brew "chezmoi"
+brew "colima"
+brew "crane"
+brew "docker"
+brew "docker-buildx"
+brew "docker-compose"
+brew "docker-credential-helper"
+brew "fd"
+brew "ffmpeg"
+brew "fontconfig"
+brew "fzf"
+brew "gh"
+brew "ghorg"
+brew "git-filter-repo"
+brew "glow"
+brew "go-task/tap/go-task"
+brew "helix"
+brew "helm"
+brew "helmfile"
+brew "htop"
+brew "imagemagick"
+brew "jq"
+brew "k9s"
+brew "kubernetes-cli"
+brew "kustomize"
+brew "lazygit"
+brew "neovim"
+brew "pandoc"
+brew "pipx"
+brew "ripgrep"
+brew "stern"
+brew "tmux"
+brew "tree"
+brew "tree-sitter"
+brew "uv"
+brew "watch"
+brew "xh"
+brew "yq"
+brew "zellij"
+brew "zoxide"
+brew "zstd"
+{{- if eq .chezmoi.os "darwin" }}
+
+# ── casks (macOS only) ───────────────────────────────────────────
+cask "font-hack-nerd-font"
+cask "wezterm"
+cask "rectangle"
+{{- end }}
+{{- if eq .trust_level "company" }}
+
+# ── company tier (work tooling) ─────────
+brew "maven"
+{{-   if eq .chezmoi.os "darwin" }}
+cask "p4"
+cask "eclipse-ide"
+{{-   end }}
+{{- end }}
+BREWFILE
+
+echo "brew bundle complete."
+{{- end }}
