@@ -13,8 +13,8 @@
 {{- $brewFull := ne $trust "client-restricted" -}}
 {{- $work := or (eq $trust "company") (eq $trust "client-restricted") -}}
 
-{{- /* experimental opt-in Obsidian/Claude-memory bundle — independent of trust level */ -}}
-{{- $obsidian := promptBoolOnce . "obsidian_enabled" "Enable experimental Obsidian/Claude-memory bundle" false -}}
+{{- /* opt-in Obsidian AI vault / Claude-memory bundle — independent of trust level */ -}}
+{{- $obsidian := promptBoolOnce . "obsidian_ai_vault" "Enable Obsidian AI vault bundle" false -}}
 {{- $vault := "" -}}
 {{- if $obsidian -}}
 {{-   $vault = promptStringOnce . "obsidian_vault" "Obsidian vault absolute path" "" -}}
@@ -31,5 +31,5 @@
     work_git      = {{ $work }}
 
 [data.obsidian]
-    enabled = {{ $obsidian }}
-    vault   = {{ $vault | quote }}
+    ai_vault = {{ $obsidian }}
+    vault    = {{ $vault | quote }}
