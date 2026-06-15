@@ -266,7 +266,9 @@ jobs:
             --cache "$cache" \
             --persistent-state "$state" \
             --promptChoice "Machine trust level=personal-primary" \
-            --promptBool "Enable experimental Obsidian/Claude-memory bundle=false" \
+            --promptString "Git user name=CI User" \
+            --promptString "Git user email=ci@example.com" \
+            --promptBool "Enable Obsidian AI vault bundle=false" \
             --no-tty
 
           echo "=== Rendered destination tree ==="
@@ -414,7 +416,9 @@ jobs:
           chezmoi init --apply \
             "${common[@]}" \
             --promptChoice "Machine trust level=personal-primary" \
-            --promptBool "Enable experimental Obsidian/Claude-memory bundle=false"
+            --promptString "Git user name=CI User" \
+            --promptString "Git user email=ci@example.com" \
+            --promptBool "Enable Obsidian AI vault bundle=false"
 
           echo "=== Pass 2: apply again (must converge to no-op) ==="
           chezmoi apply "${common[@]}"
