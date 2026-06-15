@@ -11,7 +11,23 @@ time decides how much of it actually materializes. A client-restricted machine
 gets a safe, minimal shell and nothing else; my primary laptop gets the full
 toolchain, secrets, and SSH keys. Same repo, different blast radius.
 
-## Install
+## Getting started
+
+### Prerequisites
+
+- **macOS or Linux** (Apple Silicon or Intel; WSL2 works, native Windows is a
+  later milestone).
+- **`git`** and **`curl`** available on `PATH` — that's it. chezmoi installs
+  itself, and the bootstrap scripts install everything else your chosen tier
+  needs (Homebrew, mise, runtimes). Nothing requires `sudo` on a stock machine.
+- A clone-able checkout of GitHub. No tokens or keys are needed to install — the
+  repo is public.
+
+> **New machine, in a hurry?** If you don't know the right trust level, pick
+> `client-restricted` (the default). It's safe and reversible — you can re-run
+> init later and choose a higher tier.
+
+### 1. Install
 
 One line. chezmoi is downloaded, this repo is cloned, you're prompted for the
 machine's trust level, and everything is applied:
@@ -20,10 +36,68 @@ machine's trust level, and everything is applied:
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply natepriddy/dotfiles
 ```
 
-On first run you'll be asked for a **trust level** (see below). The choice is
-written to `~/.config/chezmoi/chezmoi.toml` (machine-local, never committed) and
-overrides the fail-closed public defaults baked into the repo. A machine that
-never finishes init therefore stays at the safest profile.
+### 2. Answer the prompts
+
+On first run you'll be asked a small number of questions; each is stored once in
+`~/.config/chezmoi/chezmoi.toml` (machine-local, never committed) and overrides
+the fail-closed public defaults baked into the repo. A machine that never
+finishes init therefore stays at the safest profile.
+
+- **Machine trust level** — `personal-primary` · `personal-secondary` ·
+  `company` · `client-restricted` (default). This single choice decides how much
+  of the repo materializes (see [Trust tiers](#trust-tiers)).
+- **Optional experimental bundles** may prompt with a safe default of *no* —
+  press enter to skip. You can enable them later (see step 3).
+
+### 3. Configure per-machine values (optional)
+
+Anything sensitive or machine-specific lives **only** in your machine-local
+`~/.config/chezmoi/chezmoi.toml`, never in the public repo. Add what you need
+under `[data.*]`, then re-apply:
+
+```toml
+[data.git]
+personal_email = "you@example.com"
+
+[data.claude]
+context7_api_key = "…"          # optional; omitted -> ctx7 runs unauthenticated
+plugins_dir      = "/abs/path"  # optional; enables a local plugin marketplace
+```
+
+Then: `chezmoi apply`. See [Secrets](#secrets) for the full list of machine-local
+keys and their fail-closed defaults.
+
+### 4. Verify it worked
+
+```sh
+chezmoi managed | head        # files chezmoi now manages for this tier
+chezmoi diff                  # should be empty right after a fresh apply
+test -f ~/.zshrc && echo ok   # core dotfile landed
+```
+
+A second `chezmoi apply` should be a clean no-op — the setup is idempotent. To
+sanity-check the whole repo (renders every tier, runs gitleaks, and does a
+throwaway container apply) without touching `$HOME`:
+
+```sh
+scripts/local-validate.sh
+```
+
+### Troubleshooting
+
+- **Re-run init to change tier:** `chezmoi init --apply` again and answer with a
+  different trust level; the new flags re-render on the next apply.
+- **Wrong trust level "stuck":** the value is cached in
+  `~/.config/chezmoi/chezmoi.toml` under `[data]`. Edit it there (or delete the
+  file and re-init) — the prompt only fires once.
+- **Locked-down box (no admin):** Homebrew's installer needs admin on macOS. On
+  such machines use `client-restricted`, which never attempts a package install;
+  the shell + editor config still land and stay usable.
+- **Headless / CI install:** the trust prompt (and any optional bundle prompt)
+  must be supplied non-interactively, e.g.
+  `chezmoi init --apply --promptChoice "Machine trust level=client-restricted" …`.
+- **Fonts didn't install:** font setup is cosmetic and non-fatal — it logs and
+  continues if a download or `unzip` is unavailable.
 
 ## Trust tiers
 
