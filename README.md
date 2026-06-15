@@ -103,6 +103,18 @@ external provider (age-encrypted files / 1Password). Secret externalization
 lands in **v2**; until then, secret-dependent files simply don't render on tiers
 where the flag is off.
 
+Two low-sensitivity, machine-local values feed `~/.claude/settings.json` and
+default to empty (fail-closed) in `.chezmoidata.toml` — set the real values
+per-machine in `~/.config/chezmoi/chezmoi.toml` under `[data.claude]`:
+
+| Key                       | Empty (default) behaviour                                | Set behaviour                                            |
+| ------------------------- | -------------------------------------------------------- | ------------------------------------------------------- |
+| `claude.context7_api_key` | `CONTEXT7_API_KEY` omitted; ctx7 runs unauthenticated    | key is emitted into `settings.json` `env`               |
+| `claude.plugins_dir`      | only official plugins load                               | abs path enables the `nate-claude` marketplace + council |
+
+These are machine-local config values, not committed secrets; v2 may move the
+API key behind the encrypted provider.
+
 ## Layout
 
 ```

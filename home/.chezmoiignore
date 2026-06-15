@@ -35,6 +35,13 @@
 #    private overlay (home TBD). Guard against accidental re-add. ──────────────
 .claude/skills/people-trust-files
 
-# ── Deferred: settings.json carries a machine-local marketplace path + plugin
-#    state; pending templatization before it's published. Not managed yet. ─────
-.claude/settings.json
+# ── Secret-bearing ~/.config files — NEVER manage in this public repo. These
+#    hold live credentials (oauth tokens, api keys, JWTs). The guard exists so a
+#    `chezmoi add`/re-add or an `add -A` sweep can never pull them into source.
+#    If a tier ever needs these, they go through the v2 secrets backend, not here.
+#    (gitignore semantics: no inline comments — each pattern stands alone.)
+.config/context7
+.config/gh/hosts.yml
+.config/temporalio
+.config/github-copilot
+.config/gh-copilot

@@ -21,3 +21,9 @@ personal_name  = "Nate Priddy"
 personal_email = ""   # set per-machine via init / local config
 work_email     = ""   # set on company / client machines
 signing_key    = ""
+
+[claude]
+# Machine-local overrides only — set real values in ~/.config/chezmoi/chezmoi.toml.
+# Empty here = fail-closed: no secret emitted, official plugins only.
+context7_api_key = ""   # empty -> CONTEXT7_API_KEY is omitted from settings.json (ctx7 runs unauthenticated)
+plugins_dir      = ""   # empty -> the nate-claude marketplace + council plugin are omitted; abs path enables them
