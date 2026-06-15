@@ -43,7 +43,7 @@ brew "chezmoi"
 
 # ── editor (self-contained on a bare box) ────────────────────────
 brew "neovim"
-brew "tree-sitter"
+brew "tree-sitter"   # parser generator CLI — required by nvim-treesitter main
 
 # ── multiplexers ─────────────────────────────────────────────────
 brew "zellij"

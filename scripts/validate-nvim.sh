@@ -24,15 +24,22 @@ FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl git gcc make unzip ca-certificates \
+    curl git gcc make unzip ca-certificates nodejs npm \
+    && npm install -g tree-sitter-cli \
     && rm -rf /var/lib/apt/lists/*
 
-# Install latest Neovim stable via GitHub releases
-RUN curl -fsSL \
-    "https://github.com/neovim/neovim/releases/download/stable/nvim-linux-x86_64.tar.gz" \
-    -o /tmp/nvim.tar.gz \
+# Install latest Neovim stable — pick the right arch tarball
+RUN arch="$(uname -m)" \
+  && case "${arch}" in \
+       x86_64)  nvim_arch="x86_64" ;; \
+       aarch64) nvim_arch="arm64"  ;; \
+       *) echo "Unsupported arch: ${arch}" && exit 1 ;; \
+     esac \
+  && curl -fsSL \
+       "https://github.com/neovim/neovim/releases/download/stable/nvim-linux-${nvim_arch}.tar.gz" \
+       -o /tmp/nvim.tar.gz \
   && tar -xzf /tmp/nvim.tar.gz -C /opt \
-  && ln -s /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim \
+  && ln -s "/opt/nvim-linux-${nvim_arch}/bin/nvim" /usr/local/bin/nvim \
   && rm /tmp/nvim.tar.gz
 
 RUN nvim --version | head -1
@@ -45,7 +52,7 @@ if [[ "${QUICK}" == "1" ]]; then
   echo ""
   echo "==> Quick check: Lua config syntax (no plugin install)…"
   docker run --rm \
-    -v "${NVIM_SOURCE}:/root/.config/nvim:ro" \
+    -v "${NVIM_SOURCE}:/root/.config/nvim" \
     -e HOME=/root \
     dotfiles-nvim-validate \
     nvim --headless \
@@ -58,7 +65,7 @@ fi
 echo ""
 echo "==> Full check: installing plugins via Lazy.nvim (~5 min)…"
 docker run --rm \
-  -v "${NVIM_SOURCE}:/root/.config/nvim:ro" \
+  -v "${NVIM_SOURCE}:/root/.config/nvim" \
   -e HOME=/root \
   dotfiles-nvim-validate \
   sh -c '
