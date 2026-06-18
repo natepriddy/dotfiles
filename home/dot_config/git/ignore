@@ -36,6 +36,9 @@ Desktop.ini
 *.p12
 *.pfx
 
+# ── Claude Code runtime state ──────────────────────────────────────────────
+.claude/settings.local.json
+
 # ── Runtime / build artefacts ──────────────────────────────────────────────
 *.log
 *.pid
