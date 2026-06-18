@@ -77,23 +77,19 @@
     "command": "bash $HOME/.claude/statusline-command.sh"
   },
   "enabledPlugins": {
-{{- if .claude.plugins_dir }}
     "council@nate-claude": true,
-{{- end }}
     "superpowers@claude-plugins-official": true,
     "figma@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true
   },
-{{- if .claude.plugins_dir }}
   "extraKnownMarketplaces": {
     "nate-claude": {
       "source": {
-        "source": "directory",
-        "path": {{ .claude.plugins_dir | quote }}
+        "source": "github",
+        "repo": "natepriddy/natepriddy-council"
       }
     }
   },
-{{- end }}
   "effortLevel": "medium",
   "theme": "dark",
   "skipAutoPermissionPrompt": true,
