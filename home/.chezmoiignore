@@ -38,6 +38,12 @@
 # ── Neovim plugin lockfile — each machine manages its own via :Lazy sync ────────
 .config/nvim/lazy-lock.json
 
+# ── macOS ~/Library — do not manage parent dir; chezmoi side-effect would set
+#    755 on a dir Apple conventions at 700. iTerm2 DynamicProfiles land via the
+#    explicit source file; chezmoi must not touch the parent dir permissions.
+Library
+Library/**
+
 # ── Secret-bearing ~/.config files — NEVER manage in this public repo. These
 #    hold live credentials (oauth tokens, api keys, JWTs). The guard exists so a
 #    `chezmoi add`/re-add or an `add -A` sweep can never pull them into source.
