@@ -124,10 +124,12 @@ defaults write com.apple.finder NewWindowTarget -string "PfAF"
 ###############################################################################
 
 # Restart Dock to apply tilesize, orientation, magnification, show-recents.
-killall Dock
-
-# Restart Finder to apply ShowAllFiles, ShowPathbar, view style, window target.
-killall Finder
+if [ "${DOTFILES_SKIP_RESTART:-0}" != "1" ]; then
+  killall Dock
+  killall Finder
+else
+  echo "DOTFILES_SKIP_RESTART=1 — skipping Dock/Finder restart."
+fi
 
 echo "macOS defaults applied. Some changes (trackpad, keyboard) may require logout."
 log_pass "${_SCRIPT}" "Dock, Finder, Trackpad defaults written"
