@@ -96,5 +96,6 @@
 {{- end }}
   "effortLevel": "medium",
   "theme": "dark",
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "skipWorkflowUsageWarning": {{ if eq .trust_level "client-restricted" }}false{{ else }}true{{ end }}
 }
