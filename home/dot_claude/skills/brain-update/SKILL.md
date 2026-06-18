@@ -31,7 +31,7 @@ Brain files live at `$VAULT/brain/`:
 ## Step 1 — Load current brain/ state
 
 ```bash
-VAULT="${OBSIDIAN_VAULT:-$HOME/Documents/ObsidianVault}"
+VAULT="${OBSIDIAN_VAULT:?OBSIDIAN_VAULT is not set — set it in ~/.zshrc.local}"
 cat "$VAULT/brain/decisions.md"
 cat "$VAULT/brain/patterns.md"
 cat "$VAULT/brain/gotchas.md"

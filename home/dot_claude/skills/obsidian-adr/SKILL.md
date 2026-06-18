@@ -145,7 +145,7 @@ Show the full note. Ask:
 ## Step 6 — Write to vault
 
 ```bash
-VAULT="${OBSIDIAN_VAULT:-$HOME/Documents/ObsidianVault}"
+VAULT="${OBSIDIAN_VAULT:?OBSIDIAN_VAULT is not set — set it in ~/.zshrc.local}"
 mkdir -p "$VAULT/AI Sessions/<project>/<label>"
 ```
 

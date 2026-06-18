@@ -52,7 +52,7 @@ Present inferred values, ask for corrections in one message:
 ## Step 2 — Find matching session notes
 
 ```bash
-VAULT="${OBSIDIAN_VAULT:-$HOME/Documents/ObsidianVault}"
+VAULT="${OBSIDIAN_VAULT:?OBSIDIAN_VAULT is not set — set it in ~/.zshrc.local}"
 find "$VAULT/AI Sessions" -name "*-session.md" | sort
 ```
 
@@ -212,7 +212,7 @@ Show digest and slides. Ask:
 ## Step 7 — Write to vault
 
 ```bash
-VAULT="${OBSIDIAN_VAULT:-$HOME/Documents/ObsidianVault}"
+VAULT="${OBSIDIAN_VAULT:?OBSIDIAN_VAULT is not set — set it in ~/.zshrc.local}"
 mkdir -p "$VAULT/Digests/<project>"
 ```
 

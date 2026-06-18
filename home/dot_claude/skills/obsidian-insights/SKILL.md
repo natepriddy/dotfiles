@@ -40,7 +40,7 @@ If no insights data is in context:
 ## Step 2 — Resolve vault path and date
 
 ```bash
-VAULT="${OBSIDIAN_VAULT:-$HOME/Documents/ObsidianVault}"
+VAULT="${OBSIDIAN_VAULT:?OBSIDIAN_VAULT is not set — set it in ~/.zshrc.local}"
 date +"%Y-%m-%d"
 mkdir -p "$VAULT/AI Reviews/insights"
 ```
