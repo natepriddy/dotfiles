@@ -114,6 +114,15 @@ gets this profile.
 Obsidian bundle (`[data.obsidian].ai_vault`) is **independent of trust tier** —
 an explicit opt-in flag defaulting false.
 
+## Skills
+
+Skills are **npm-managed via lockfile**, not tracked as source files.
+
+- `home/dot_agents/dot_skill-lock.json` is the only committed artifact — chezmoi manages it
+- `run_onchange_after_install-skills.sh.tmpl` reconciles installed skills against the lockfile on every apply
+- Never `chezmoi add ~/.agents/skills/**` — the lockfile + install script is the source of truth
+- Obsidian-related skills must use `obsidian-` prefix; they are gated off on machines where `obsidian.ai_vault = false`
+
 ## Patterns
 
 **macOS defaults — `run_onchange_`, not `run_once_`.**
