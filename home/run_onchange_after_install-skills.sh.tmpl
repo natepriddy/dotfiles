@@ -33,7 +33,11 @@ if ! command -v npx >/dev/null; then
   echo "npx missing — skipping skill reconciliation (install Node.js >= 18)" >&2; exit 0
 fi
 if [ ! -f "$LOCK" ]; then
-  echo "lockfile missing at $LOCK — skipping skill reconciliation" >&2; exit 0
+  echo "lockfile missing at $LOCK — bootstrapping from chezmoi source"
+  mkdir -p "$(dirname "$LOCK")"
+  cat > "$LOCK" << 'LOCKEOF'
+{{ include "dot_agents/dot_skill-lock.json" }}
+LOCKEOF
 fi
 
 desired=$(jq -r '.skills | keys[]' "$LOCK" | sort -u)
