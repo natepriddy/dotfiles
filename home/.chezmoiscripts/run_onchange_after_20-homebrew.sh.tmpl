@@ -60,9 +60,9 @@ bundle_and_verify "base" "${base_file}" 1
 
 tail_file="$(mktemp)"
 cat > "${tail_file}" <<'BREWFILE'
-# taps
-tap "go-task/tap"
-tap "derailed/k9s"
+# taps (trusted: true required by Homebrew 6.0+ for third-party taps)
+tap "go-task/tap", trusted: true
+tap "derailed/k9s", trusted: true
 
 # containers
 brew "colima"
