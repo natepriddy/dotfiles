@@ -1,14 +1,8 @@
--- Add your plugins here
--- Add your plugins here
--- Plugin configuration using `lazy.nvim`
-return
--- Add your plugins here
-{
+-- Disabled: redundant with treesitter + render-markdown.nvim, and its
+-- `vim_markdown_conceal = 0` forced conceallevel=0, which suppressed
+-- render-markdown's heading icons and inline concealment.
+-- Re-enable only if you specifically want :Toc / ]] [[ heading motions / :TableFormat.
+return {
   "plasticboy/vim-markdown",
-  config = function()
-    -- Optional: Additional configurations for vim-markdown
-    vim.g.vim_markdown_folding_disabled = 1 -- Disable folding
-    vim.g.vim_markdown_conceal = 0 -- Disable conceal
-    vim.g.vim_markdown_frontmatter = 1 -- Enable front matter syntax
-  end,
+  enabled = false,
 }
