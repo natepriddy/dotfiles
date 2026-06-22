@@ -12,7 +12,7 @@ vim.api.nvim_create_autocmd({ "BufEnter", "BufNewFile" }, {
 })
 
 -- Markdown: hide diagnostics (markdownlint noise) by default.
--- Lint still runs silently; reveal it per buffer with <leader>um.
+-- Lint still runs silently; reveal it per buffer with <leader>uM.
 vim.api.nvim_create_autocmd("FileType", {
   pattern = { "markdown" },
   callback = function(ev)
