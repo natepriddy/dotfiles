@@ -9,9 +9,9 @@ return {
       width = "full",
       -- Conceal the '#'s and inline the icon on the left.
       position = "inline",
-      -- Cycled by heading level. Swap for Nerd Font numeric-box glyphs
-      -- (󰎦 󰎩 󰎬 …) if you prefer square boxes over circles.
-      icons = { "① ", "② ", "③ ", "④ ", "⑤ ", "⑥ " },
+      -- Nerd Font numeric-N-box glyphs (mdi), cycled by heading level.
+      -- Swap to outline boxes 󰎦 󰎩 󰎬 󰎮 󰎰 󰎵 if you prefer.
+      icons = { "󰎤 ", "󰎧 ", "󰎪 ", "󰎭 ", "󰎱 ", "󰎳 " },
       right_pad = 1,
     },
     bullet = {
