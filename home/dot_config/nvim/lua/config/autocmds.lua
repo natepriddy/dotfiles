@@ -10,3 +10,12 @@ vim.api.nvim_create_autocmd({ "BufEnter", "BufNewFile" }, {
   pattern = "*.har",
   command = "set filetype=json",
 })
+
+-- Markdown: hide diagnostics (markdownlint noise) by default.
+-- Lint still runs silently; reveal it per buffer with <leader>um.
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = { "markdown" },
+  callback = function(ev)
+    vim.diagnostic.enable(false, { bufnr = ev.buf })
+  end,
+})

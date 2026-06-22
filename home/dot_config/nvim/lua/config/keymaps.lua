@@ -21,3 +21,10 @@ vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv", { desc = "Move selection up" })
 
 -- Paste over selection without losing register
 vim.keymap.set("x", "<leader>p", [["_dP]], { desc = "Paste without yanking" })
+
+-- Toggle diagnostics in the current buffer (markdown is off by default; this reveals markdownlint).
+vim.keymap.set("n", "<leader>um", function()
+  local on = vim.diagnostic.is_enabled({ bufnr = 0 })
+  vim.diagnostic.enable(not on, { bufnr = 0 })
+  vim.notify("Buffer diagnostics " .. (on and "disabled" or "enabled"), vim.log.levels.INFO)
+end, { desc = "Toggle buffer diagnostics" })
