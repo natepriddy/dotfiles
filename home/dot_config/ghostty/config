@@ -1,18 +1,39 @@
+# Ghostty config. NOTE: no inline comments — a # must start its own line.
+# Reload live after edits: cmd+shift+,
+
 # ── Font ──────────────────────────────────────────────────────────────────────
 font-family = JetBrains Mono Nerd Font Mono
 font-size = 12
+# faux-bold glyphs, fuller strokes
+font-thicken = true
+# vertical breathing room between rows
+adjust-cell-height = 10%
 
 # ── Theme ─────────────────────────────────────────────────────────────────────
 theme = Catppuccin Mocha
 
 # ── Window ────────────────────────────────────────────────────────────────────
+# slight transparency
+background-opacity = 0.92
+# frosted-glass behind the terminal
+background-blur = 18
 window-padding-x = 8
 window-padding-y = 8
 window-decoration = true
+# tabs live in the titlebar, native look
+macos-titlebar-style = tabs
 
 # ── Cursor ────────────────────────────────────────────────────────────────────
 cursor-style = block
 cursor-style-blink = true
+
+# ── Behavior ──────────────────────────────────────────────────────────────────
+# fix Alt/Meta in vim, tmux, zsh word-jumps
+macos-option-as-alt = true
+# select text goes straight to the system clipboard
+copy-on-select = clipboard
+# skip the close-confirmation prompt on cmd+w
+confirm-close-surface = false
 
 # ── Scrollback ────────────────────────────────────────────────────────────────
 scrollback-limit = 10000
@@ -22,3 +43,18 @@ shell-integration = zsh
 
 # ── Keybindings ───────────────────────────────────────────────────────────────
 keybind = cmd+shift+comma=reload_config
+
+# Splits (super = cmd on macOS)
+keybind = super+d=new_split:right
+keybind = super+shift+d=new_split:down
+keybind = super+ctrl+h=goto_split:left
+keybind = super+ctrl+l=goto_split:right
+
+# Tabs (cmd+s leader: press cmd+s, then the next key)
+keybind = cmd+s>c=new_tab
+keybind = cmd+s>shift+l=next_tab
+keybind = cmd+s>shift+h=previous_tab
+
+# Quick terminal (Ctrl+backtick, drops down from top)
+keybind = global:ctrl+grave_accent=toggle_quick_terminal
+quick-terminal-position = top

@@ -1,3 +1,15 @@
+# General Guidelines
+
+- Never use the em dash "—". Use plain dash "-" instead.
+- Never auto-add your agent name as a commit co-author.
+- Never modify CHANGELOG.md or any file marked auto-generated.
+- When writing or substantially editing long Markdown, put each full sentence on its own line. Preserve normal structure, but avoid wrapping multiple sentences onto one physical line.
+- On technical decisions, give little weight to development cost. Prefer quality, simplicity, robustness, scalability, and long-term maintainability.
+- Bug fixes: start by reproducing the bug in an E2E setting close to real usage, so the fix solves the real problem.
+- UI/E2E work: be picky, obsess over pixel perfection. Fix obvious breakage even if it is not your task. Apply the same standard to lint, test failures, and flakiness.
+
+---
+
 # Communication
 
 Default: **caveman full**. Revert: "normal mode" or "stop caveman". Switch: `/caveman lite|full|ultra`.
@@ -13,35 +25,18 @@ Pushback: hold position when evidence supports it. No capitulation without cause
 ---
 
 # Session Workflow
+
 - Surface short plan before changes; start minimal, expand on request.
 - After multi-file edits, run test suite; report pass/fail. Note explicitly if no suite exists.
+- **Default Plan Mode.** No edits unless: "You may implement" / "Proceed to write changes" / "Make the edits." Not promoted → read-only: analyze, propose, verify.
 - Large scope + vague details → suggest `/grill-me` before proceeding.
 - Before large refactors/multi-file edits, propose minimal fix first (e.g., delete vs. edit).
 
 ---
 
-{{ if .obsidian.ai_vault -}}
+# On-demand references (read only when relevant)
+{{- if .obsidian.ai_vault }}
 {{ include ".chezmoitemplates/claude-obsidian.md" -}}
-{{ end -}}
-# Agent Council Charter
-
-## Prime Directive
-- Uncertain which agent(s) → consult **router** first.
-- Default **Plan Mode**. No edits unless: "You may implement" / "Proceed to write changes" / "Make the edits."
-- Not promoted → read-only: analyze, propose, verify only.
-
-## Escalation
-> **"This requires your decision. Reason: [one sentence]."**
-
-## Retry budget
-1/agent/task → escalate; 2/tool → report; never silent.
-
-Full charter, failure modes, agent roles: `~/.claude/agents/charter-details.md`
-
----
-
-# SDD Workflow
-Spec-driven: `/SDD-1-generate-spec` → `/SDD-2-generate-task-list-from-spec` → `/SDD-3-manage-tasks` → `/SDD-4-validate-spec-implementation`
-Reference: [Spec-Driven Development](https://github.com/liatrio-labs/spec-driven-workflow)
-
----
+{{- end }}
+- **Agent council** → uncertain which agent(s)? consult **router** first. Full charter, roles, failure modes: `~/.claude/agents/charter-details.md`. Escalate with: "This requires your decision. Reason: [one sentence]." Retry budget: 1/agent/task → escalate; 2/tool → report; never silent.
+- **SDD workflow** → `/SDD-1-generate-spec` → `/SDD-2-generate-task-list-from-spec` → `/SDD-3-manage-tasks` → `/SDD-4-validate-spec-implementation`. Reference: <https://github.com/liatrio-labs/spec-driven-workflow>.
