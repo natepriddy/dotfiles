@@ -27,9 +27,10 @@
 .claude/settings.local.json
 .claude/CLAUDE.original.md
 
-# ── npm-managed skill bodies (materialized by run_onchange install-skills from
-#    the lockfile) — chezmoi manages only the lockfile + install script ─────────
+# ── npm-managed skill bodies + lockfile (materialized by run_onchange install-skills
+#    from the lockfile) — lockfile is npx's runtime artifact, not user-edited config ─
 .agents/skills
+.agents/.skill-lock.json
 
 # ── Private carve-out: PII skill is NOT in this public repo. Handled in a
 #    private overlay (home TBD). Guard against accidental re-add. ──────────────
