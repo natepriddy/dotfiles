@@ -14,3 +14,25 @@ format = '[ $version](bold cyan) '
 
 [zig]
 symbol = '⚡️ '
+
+# In detached HEAD (treehouse worktrees start here), git_branch has no branch to
+# show, so surface the short commit SHA instead. only_detached=true keeps this
+# hidden on normal branch checkouts.
+[git_commit]
+only_detached = true
+commit_hash_length = 7
+format = '[@$hash$tag]($style) '
+style = 'bold yellow'
+tag_disabled = false
+tag_symbol = ' '
+
+# Show a badge with the worktree name only when CWD is inside a LINKED git
+# worktree. Detection: in a linked worktree, --git-dir points at
+# .git/worktrees/<name> while --git-common-dir points at the shared .git, so the
+# two differ. In the main checkout (or outside any repo) they're equal/empty.
+[custom.worktree]
+description = 'Badge when inside a linked git worktree'
+when = '''[ "$(git rev-parse --git-dir 2>/dev/null)" != "$(git rev-parse --git-common-dir 2>/dev/null)" ]'''
+command = 'basename "$(git rev-parse --show-toplevel 2>/dev/null)"'
+format = '[🌲 $output]($style) '
+style = 'bold green'
