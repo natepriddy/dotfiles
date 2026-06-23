@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Install cargo tools.
+set -euo pipefail
+
+{{- if eq .trust_level "client-restricted" }}
+echo "client-restricted — skipping cargo tools."; exit 0
+{{- end }}
+
+. "${HOME}/.cargo/env" 2>/dev/null || true
+if ! command -v cargo &>/dev/null; then
+  echo "cargo not found — skipping." >&2; exit 0
+fi
+
+cargo install cargo-watch cargo-expand
