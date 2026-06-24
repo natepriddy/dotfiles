@@ -46,7 +46,14 @@ command -v starship >/dev/null && eval "$(starship init zsh)"
 # ─────────────────────────────────────────────────────────────────────────────
 # CLI niceties — each guarded so a minimal box still gets a working shell
 # ─────────────────────────────────────────────────────────────────────────────
-command -v zoxide >/dev/null && { eval "$(zoxide init zsh)"; alias cd="z"; export _ZO_DOCTOR=0; }
+command -v zoxide >/dev/null && {
+  export _ZO_DOCTOR=0
+  if [[ -o interactive ]]; then
+    eval "$(zoxide init zsh --cmd cd)"   # human shell: zoxide owns `cd` (real function: cd -, cd .., completions)
+  else
+    eval "$(zoxide init zsh)"            # AI agents / scripts (non-interactive): only `z` defined, `cd` stays builtin
+  fi
+}
 command -v eza    >/dev/null && alias ls="eza --icons=always"
 command -v bat    >/dev/null && export BAT_THEME="tokyonight_night"
 
